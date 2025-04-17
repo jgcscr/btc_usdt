@@ -1,0 +1,10 @@
+# requirements.txt
+pandas
+numpy
+scikit-learn
+ta
+apscheduler
+xgboost
+lightgbm
+numba
+tqdm
