@@ -1,0 +1,10 @@
+2025-05-01 00:14:03 INFO     [signals] [signals.py:92] Generating signals with probability threshold: 0.55
+2025-05-01 00:14:03 INFO     [signals] [signals.py:110] Signal generation complete. Counts: {'Flat': 2, 'Long': 3}
+2025-05-01 00:14:03 INFO     [signals] [signals.py:92] Generating signals with probability threshold: 0.75
+2025-05-01 00:14:03 INFO     [signals] [signals.py:110] Signal generation complete. Counts: {'Flat': 4, 'Long': 1}
+2025-05-01 00:18:07 INFO     [signals] [signals.py:92] Generating signals with probability threshold: 0.6
+2025-05-01 00:18:07 INFO     [signals] [signals.py:110] Signal generation complete. Counts: {'Flat': 3, 'Long': 2}
+2025-05-01 00:18:07 INFO     [signals] [signals.py:92] Generating signals with probability threshold: 0.55
+2025-05-01 00:18:07 INFO     [signals] [signals.py:110] Signal generation complete. Counts: {'Flat': 2, 'Long': 3}
+2025-05-01 00:18:07 INFO     [signals] [signals.py:92] Generating signals with probability threshold: 0.75
+2025-05-01 00:18:07 INFO     [signals] [signals.py:110] Signal generation complete. Counts: {'Flat': 4, 'Long': 1}

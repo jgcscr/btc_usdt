@@ -1,0 +1,9 @@
+2025-05-01 00:18:06 INFO     [fetch_data] [fetch_data.py:49] Fetching data for BTCUSDT (1m) from 2023-03-15 00:00:00 to 2023-03-15 00:02:00
+2025-05-01 00:18:06 INFO     [fetch_data] [fetch_data.py:92] Fetched 1 klines.
+2025-05-01 00:21:05 ERROR    [fetch_data] [fetch_data.py:36] API request failed: API Error
+2025-05-01 03:06:55 INFO     [fetch_data] [fetch_data.py:127] Starting data fetch/update process...
+2025-05-01 03:06:55 INFO     [fetch_data] [fetch_data.py:160] No existing data file found at /workspaces/btc_usdt/data/1m_btcusdt_raw.parquet. Performing initial fetch.
+2025-05-01 03:06:55 INFO     [fetch_data] [fetch_data.py:49] Fetching data for BTCUSDT (1m) from 2023-05-02 03:06:55.673913 to 2025-05-01 03:06:55.673913
+2025-05-01 03:12:12 INFO     [fetch_data] [fetch_data.py:92] Fetched 1051206 klines.
+2025-05-01 03:12:13 INFO     [fetch_data] [fetch_data.py:173] Successfully saved/updated data to /workspaces/btc_usdt/data/1m_btcusdt_raw.parquet
+2025-05-01 03:12:13 INFO     [fetch_data] [fetch_data.py:181] Data fetch/update process finished.

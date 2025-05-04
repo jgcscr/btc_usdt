@@ -1,0 +1,1 @@
+2025-05-01 00:18:07 ERROR    [auto_optimize] [auto_optimize.py:133] Error during training/evaluation in trial 0: Found input variables with inconsistent numbers of samples: [6, 3]
