@@ -12,6 +12,7 @@ from typing import Optional, List, Dict, Any
 from btc_usdt_pipeline import config
 from btc_usdt_pipeline.utils.helpers import setup_logger
 from btc_usdt_pipeline.utils.data_manager import DataManager
+from btc_usdt_pipeline.utils.data_processing import optimize_memory_usage
 
 logger = setup_logger('fetch_data.log')
 
@@ -89,6 +90,9 @@ def fetch_historical_data(symbol: str, interval: str, start_date: datetime, end_
     # Remove duplicates just in case API returns overlapping data
     df = df.drop_duplicates(subset=['open_time'], keep='first')
 
+    # Optimize memory usage
+    df = optimize_memory_usage(df, logger=logger)
+
     logger.info(f"Fetched {len(df)} klines.")
     return df
 
@@ -143,11 +147,7 @@ def main(years=None):
         try:
             dm = DataManager()
             existing_df = dm.load_data(raw_data_path, file_type='parquet', use_cache=False)
-            # Cast numeric columns to memory-efficient types
-            for col in existing_df.select_dtypes(include=['float64', 'float']).columns:
-                existing_df[col] = col.astype('float32')
-            for col in existing_df.select_dtypes(include=['int64', 'int']).columns:
-                existing_df[col] = col.astype('int32')
+            # Remove manual dtype casting, handled by memory optimizer
             if 'open_time' not in existing_df.columns:
                  logger.error("Existing data file is missing 'open_time' column. Cannot update. Please check or delete the file.")
                  return

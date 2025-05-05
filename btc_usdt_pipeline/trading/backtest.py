@@ -10,11 +10,39 @@ import math
 
 # Use absolute imports from the package
 from btc_usdt_pipeline import config
-from btc_usdt_pipeline.utils.helpers import setup_logger
+from btc_usdt_pipeline.utils.helpers import setup_logger, ParameterValidationError, DataAlignmentError
 # Note: generate_signals is called *before* the backtest function usually.
 # The backtest function receives the signals as input.
 
 logger = setup_logger('backtest.log')
+
+def validate_inputs(df: pd.DataFrame, signals, required_cols=None, logger=None):
+    """
+    Validates DataFrame and signals for backtesting:
+    - Checks required columns
+    - No NaNs in critical columns
+    - Signal array and DataFrame match in length
+    - Index is properly ordered
+    Raises ParameterValidationError or DataAlignmentError on failure.
+    """
+    from btc_usdt_pipeline.utils.helpers import ParameterValidationError, DataAlignmentError
+    logger = logger or setup_logger('backtest.log')
+    required_cols = required_cols or ['open', 'high', 'low', 'close']
+    for col in required_cols:
+        if col not in df.columns:
+            logger.error(f"Required column '{col}' missing from DataFrame.")
+            raise ParameterValidationError(f"Required column '{col}' missing from DataFrame.")
+        if df[col].isnull().any():
+            logger.error(f"NaN values found in required column '{col}'.")
+            raise ParameterValidationError(f"NaN values found in required column '{col}'.")
+    if len(df) != len(signals):
+        logger.error(f"DataFrame length ({len(df)}) and signals length ({len(signals)}) mismatch.")
+        raise DataAlignmentError(f"DataFrame length ({len(df)}) and signals length ({len(signals)}) mismatch.")
+    if isinstance(df.index, (pd.DatetimeIndex, pd.Int64Index, pd.RangeIndex)):
+        if not df.index.is_monotonic_increasing:
+            logger.warning("DataFrame index is not monotonic increasing. Sorting.")
+            df = df.sort_index()
+    return df
 
 def run_backtest(df: pd.DataFrame,
                  signals: np.ndarray,
@@ -45,15 +73,35 @@ def run_backtest(df: pd.DataFrame,
             - equity_curve: List of equity values over time.
             - trade_log: List of dictionaries detailing each executed trade.
     """
+    # --- Input validation and alignment ---
+    from btc_usdt_pipeline.utils.data_processing import align_and_validate_data
+    df = validate_inputs(df, signals, required_cols=['open', 'high', 'low', 'close', atr_col], logger=logger)
+    df, signals = align_and_validate_data(df, signals, arr_name="signals", logger=logger)
+
+    # --- Parameter validation ---
+    if sl_multiplier <= 0 or tp_multiplier <= 0:
+        logger.error("sl_multiplier and tp_multiplier must be positive.")
+        raise ParameterValidationError("sl_multiplier and tp_multiplier must be positive.")
+    if not (0 < risk_fraction <= 1):
+        logger.error("risk_fraction must be between 0 and 1.")
+        raise ParameterValidationError("risk_fraction must be between 0 and 1.")
+    if commission_rate < 0:
+        logger.error("commission_rate must be non-negative.")
+        raise ParameterValidationError("commission_rate must be non-negative.")
     if len(df) != len(signals):
         logger.error(f"DataFrame length ({len(df)}) and signals length ({len(signals)}) mismatch. Cannot run backtest.")
-        return [initial_equity], []
+        raise DataAlignmentError(f"DataFrame length ({len(df)}) and signals length ({len(signals)}) mismatch.")
 
     if atr_col not in df.columns:
         logger.error(f"ATR column '{atr_col}' not found in DataFrame. Cannot run backtest.")
         return [initial_equity], []
 
     logger.info(f"Starting backtest with Initial Equity: ${initial_equity:,.2f}, Risk/Trade: {risk_fraction:.2%}, SL: {sl_multiplier}*ATR, TP: {tp_multiplier}*ATR, Comm: {commission_rate:.4%}, Slippage: {slippage_points} pts")
+
+    # --- Slippage sanity check: warn if slippage is excessive ---
+    avg_price = df['close'].mean() if not df.empty else 0
+    if avg_price > 0 and slippage_points / avg_price > 0.1:
+        logger.warning(f"Slippage ({slippage_points}) is more than 10% of average price ({avg_price:.2f}). Results may be unrealistic.")
 
     equity = float(initial_equity)
     equity_curve = [equity]
@@ -84,15 +132,23 @@ def run_backtest(df: pd.DataFrame,
         pnl = 0.0
         trade_closed = False
 
+        # --- Slippage Model ---
+        # For LONG positions:
+        #   ENTRY: Add slippage to entry price (pay more when buying)
+        #   EXIT (TP/SL): Subtract slippage from exit price (receive less when selling)
+        # For SHORT positions:
+        #   ENTRY: Subtract slippage from entry price (receive less when selling)
+        #   EXIT (TP/SL): Add slippage to exit price (pay more when buying back)
+
         if position == 1: # Currently Long
             # Check Stop Loss first (most conservative)
             if low <= stop_loss:
-                exit_price = stop_loss - slippage_points # Apply slippage on exit
+                exit_price = stop_loss - slippage_points # LONG exit: receive less
                 trade_closed = True
                 log_reason = "SL"
             # Check Take Profit
             elif high >= take_profit:
-                exit_price = take_profit - slippage_points # Apply slippage on exit
+                exit_price = take_profit - slippage_points # LONG exit: receive less
                 trade_closed = True
                 log_reason = "TP"
 
@@ -116,12 +172,12 @@ def run_backtest(df: pd.DataFrame,
         elif position == -1: # Currently Short
             # Check Stop Loss first
             if high >= stop_loss:
-                exit_price = stop_loss + slippage_points # Apply slippage on exit
+                exit_price = stop_loss + slippage_points # SHORT exit: pay more
                 trade_closed = True
                 log_reason = "SL"
             # Check Take Profit
             elif low <= take_profit:
-                exit_price = take_profit + slippage_points # Apply slippage on exit
+                exit_price = take_profit + slippage_points # SHORT exit: pay more
                 trade_closed = True
                 log_reason = "TP"
 
@@ -150,7 +206,7 @@ def run_backtest(df: pd.DataFrame,
 
             if signal == "Long" and sl_distance_pts > 0:
                 enter_trade = True
-                entry_price = close + slippage_points # Apply slippage on entry
+                entry_price = close + slippage_points # LONG entry: pay more
                 stop_loss = entry_price - sl_distance_pts
                 take_profit = entry_price + tp_distance_pts
                 risk_per_unit = entry_price - stop_loss
@@ -158,7 +214,7 @@ def run_backtest(df: pd.DataFrame,
 
             elif signal == "Short" and sl_distance_pts > 0:
                 enter_trade = True
-                entry_price = close - slippage_points # Apply slippage on entry
+                entry_price = close - slippage_points # SHORT entry: receive less
                 stop_loss = entry_price + sl_distance_pts
                 take_profit = entry_price - tp_distance_pts
                 risk_per_unit = stop_loss - entry_price
@@ -206,12 +262,12 @@ def run_backtest(df: pd.DataFrame,
     # If position is still open at the end, mark it based on the last close price
     if position != 0 and current_trade_index >= 0 and equity > 0:
         last_close = df['close'].iloc[-1]
-        exit_price = last_close # Assume exit at last close, apply slippage
-        exit_price += slippage_points if position == -1 else -slippage_points
-
+        # Apply slippage on forced exit at end of data
         if position == 1:
+            exit_price = last_close - slippage_points # LONG exit: receive less
             pnl = (exit_price - entry_price) * position_size
         else: # position == -1
+            exit_price = last_close + slippage_points # SHORT exit: pay more
             pnl = (entry_price - exit_price) * position_size
 
         commission = abs(pnl) * commission_rate # Commission on exit value
@@ -230,3 +286,25 @@ def run_backtest(df: pd.DataFrame,
 
     logger.info(f"Backtest finished. Final Equity: {equity_curve[-1]:.2f}. Total Trades Logged: {len(trade_log)}")
     return [float(e) for e in equity_curve], trade_log
+
+def estimate_total_slippage_cost(trade_log):
+    """
+    Estimate the total slippage cost across all trades in the trade log.
+    Args:
+        trade_log (list): List of trade dictionaries from run_backtest.
+    Returns:
+        float: Total slippage cost (absolute sum of entry and exit slippage).
+    """
+    total_slippage = 0.0
+    for trade in trade_log:
+        if trade['Type'] == 'Long':
+            entry_slip = trade['Entry'] - trade['Entry_idx'] if trade['Entry'] is not None and trade['Entry_idx'] is not None else 0
+            exit_slip = trade['Exit'] - trade['Target'] if trade['Exit'] is not None and trade['Target'] is not None else 0
+        elif trade['Type'] == 'Short':
+            entry_slip = trade['Entry_idx'] - trade['Entry'] if trade['Entry'] is not None and trade['Entry_idx'] is not None else 0
+            exit_slip = trade['Exit'] - trade['Target'] if trade['Exit'] is not None and trade['Target'] is not None else 0
+        else:
+            entry_slip = 0
+            exit_slip = 0
+        total_slippage += abs(entry_slip) + abs(exit_slip)
+    return total_slippage

@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split # Using simple split for optimization trials
 from sklearn.metrics import accuracy_score, log_loss
+import psutil
 
 # Import necessary models and helpers
 from btc_usdt_pipeline import config
@@ -51,6 +52,19 @@ def load_data_once():
 
     logger.info(f"Data loaded successfully for optimization. Shape: {df.shape}")
     return df
+
+def get_safe_n_jobs(requested_n_jobs: int, min_free_gb: float = 2.0) -> int:
+    """
+    Returns a safe n_jobs value based on available RAM.
+    If available RAM is below min_free_gb, returns 1 (serial execution).
+    Otherwise, returns requested_n_jobs.
+    """
+    mem = psutil.virtual_memory()
+    avail_gb = mem.available / 1024**3
+    if avail_gb < min_free_gb:
+        logger.warning(f"Low available RAM ({avail_gb:.2f} GB). Forcing n_jobs=1 to avoid OOM.")
+        return 1
+    return requested_n_jobs
 
 def objective(trial: optuna.Trial) -> float:
     """Optuna objective function to train and evaluate a model."""
@@ -136,8 +150,14 @@ def objective(trial: optuna.Trial) -> float:
     return loss # Optuna minimizes the objective function
 
 @memory_safe(min_free_percent=10)
-def main():
-    """Runs the Optuna optimization study with memory checks and checkpointing."""
+def main(n_trials=None, n_jobs=None):
+    """
+    Runs the Optuna optimization study with memory checks and checkpointing.
+    Parallelization strategy:
+    - n_jobs controls the number of parallel Optuna trials (default: config.OPTUNA_N_JOBS)
+    - Each model is trained with n_jobs=1 to avoid nested parallelism
+    - If available RAM is low, n_jobs is forced to 1 for safety
+    """
     logger.info("--- Starting Auto Optimization --- ")
 
     # Load data once before starting study
@@ -148,18 +168,20 @@ def main():
     study_name = "btc_usdt_auto_optimize"
     study = optuna.create_study(direction="minimize")
 
-    n_trials = config.OPTUNA_N_TRIALS_AUTO
+    n_trials = n_trials or config.OPTUNA_N_TRIALS_AUTO
+    requested_n_jobs = n_jobs if n_jobs is not None else getattr(config, 'OPTUNA_N_JOBS', 4)
+    safe_n_jobs = get_safe_n_jobs(requested_n_jobs)
     checkpoint_dir = config.RESULTS_DIR / "optuna_checkpoints"
     checkpoint_interval = 10  # Save every 10 trials
 
     try:
         for i in range(0, n_trials, checkpoint_interval):
             remaining = min(checkpoint_interval, n_trials - i)
-            logger.info(f"Running trials {i+1} to {i+remaining}...")
+            logger.info(f"Running trials {i+1} to {i+remaining} with n_jobs={safe_n_jobs}...")
             study.optimize(
                 objective,
                 n_trials=remaining,
-                n_jobs=config.OPTUNA_N_JOBS
+                n_jobs=safe_n_jobs
             )
             check_memory_usage()
             save_checkpoint(study, i+remaining, checkpoint_dir)
@@ -191,4 +213,9 @@ def main():
     logger.info("--- Auto Optimization Finished --- ")
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--n_trials', type=int, default=None, help='Number of Optuna trials')
+    parser.add_argument('--n_jobs', type=int, default=None, help='Number of parallel Optuna jobs')
+    args = parser.parse_args()
+    main(n_trials=args.n_trials, n_jobs=args.n_jobs)

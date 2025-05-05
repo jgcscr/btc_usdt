@@ -18,6 +18,23 @@ import matplotlib.dates as mdates
 
 from btc_usdt_pipeline.utils.data_processing import calculate_metrics
 
+# --- Custom Exceptions ---
+class BacktestError(Exception):
+    """Base exception for backtesting errors."""
+    pass
+
+class DataAlignmentError(BacktestError):
+    """Raised when data and signals are misaligned."""
+    pass
+
+class ParameterValidationError(BacktestError):
+    """Raised when invalid parameters are provided to backtest or related functions."""
+    pass
+
+class OptimizationError(Exception):
+    """Raised for errors during optimization routines."""
+    pass
+
 # --- Logger Setup ---
 def setup_logger(log_filename: str, level: str = None, logs_dir: 'Path' = None) -> logging.Logger:
     """

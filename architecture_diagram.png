@@ -1,0 +1,9 @@
+# (Diagram placeholder)
+# Please create a simple architecture diagram using your preferred tool.
+# Example structure:
+#
+# [Data Fetching] --> [Feature Engineering] --> [Model Training] --> [Optimization]
+#        |                                                      |
+#        +----------------------> [Backtesting] <---------------+
+#
+# Save the diagram as architecture_diagram.png in the project root.

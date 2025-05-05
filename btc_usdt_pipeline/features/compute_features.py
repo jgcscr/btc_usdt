@@ -236,7 +236,7 @@ def main(input_file=None, output_file=None, sample=False):
         if df is None:
             logger.error(f"Raw data file not found at {raw_data_path}. Run data fetching first.")
             return
-        df = optimize_dataframe_dtypes(df)
+        # Remove manual optimize_dataframe_dtypes, now handled by DataManager
         if 'open_time' not in df.columns:
             logger.error("Raw data file missing 'open_time' column.")
             return

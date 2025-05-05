@@ -14,6 +14,7 @@ import os
 # Use absolute imports from the package
 from btc_usdt_pipeline import config
 from btc_usdt_pipeline.utils.helpers import split_data, setup_logger, make_binary_target
+from btc_usdt_pipeline.utils.data_processing import optimize_memory_usage
 
 # Setup logger using the centralized configuration
 logger = setup_logger('train_additional_models.log')  # Changed log filename for clarity
@@ -42,11 +43,7 @@ def load_and_prepare_data(data_path):
     logger.info("Note: For very large datasets on memory-constrained environments (like Colab), consider loading data in chunks or using memory-efficient dtypes.")
     try:
         df = pd.read_parquet(data_path)
-        # Cast numeric columns to memory-efficient types
-        for col in df.select_dtypes(include=['float64', 'float']).columns:
-            df[col] = df[col].astype('float32')
-        for col in df.select_dtypes(include=['int64', 'int']).columns:
-            df[col] = df[col].astype('int32')
+        df = optimize_memory_usage(df, logger=logger)
     except FileNotFoundError:
         logger.error(f"Data file not found at {data_path}. Run feature computation first.")
         return None

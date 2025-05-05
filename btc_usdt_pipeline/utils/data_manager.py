@@ -50,6 +50,9 @@ class DataManager:
                 raise ValueError(f"Unsupported file_type: {file_type}")
             if use_cache:
                 self._cache[cache_key] = df
+            # Optimize memory usage after loading
+            from btc_usdt_pipeline.utils.data_processing import optimize_memory_usage
+            df = optimize_memory_usage(df)
             return df
         except Exception as e:
             print(f"[DataManager] Error loading {path}: {e}")
