@@ -10,11 +10,12 @@ import psutil
 
 # Import necessary models and helpers
 from btc_usdt_pipeline import config
-from btc_usdt_pipeline.utils.helpers import setup_logger, load_json, save_json, make_binary_target
+from btc_usdt_pipeline.utils.helpers import setup_logger, make_binary_target
 from btc_usdt_pipeline.models.train import train_random_forest, train_xgboost # Assuming these can be adapted or new ones created for optuna
 from btc_usdt_pipeline.utils.data_manager import DataManager
 from btc_usdt_pipeline.utils.colab_utils import check_memory_usage, save_checkpoint, memory_safe
 from btc_usdt_pipeline.utils.data_processing import optimize_dataframe_dtypes
+from btc_usdt_pipeline.io.serialization import load_json, save_json
 # Need adaptable training functions or direct model instantiation here
 from sklearn.ensemble import RandomForestClassifier
 import xgboost as xgb

@@ -1,0 +1,8 @@
+# Application-level settings and environment configuration
+
+log_level: "INFO"
+log_dir: "logs/"
+environment: "dev"  # dev, test, prod
+results_dir: "results/"
+
+# Add more application-level settings as needed

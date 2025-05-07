@@ -7,13 +7,14 @@ import numpy as np
 from typing import Dict, Any
 
 from btc_usdt_pipeline import config
-from btc_usdt_pipeline.utils.helpers import setup_logger, load_json, save_json, calculate_metrics
+from btc_usdt_pipeline.utils.helpers import setup_logger, calculate_metrics
 from btc_usdt_pipeline.trading.signals import generate_signals # Assuming a simple signal function for optimization
 from btc_usdt_pipeline.trading.backtest import run_backtest # Use the main backtester
 from btc_usdt_pipeline.features.compute_features import calculate_indicators # Reuse indicator calculation
 from btc_usdt_pipeline.utils.data_manager import DataManager
 from btc_usdt_pipeline.utils.data_processing import optimize_dataframe_dtypes
 from btc_usdt_pipeline.utils.colab_utils import memory_safe
+from btc_usdt_pipeline.io.serialization import load_json, save_json
 
 logger = setup_logger('optimize_indicators.log')
 

@@ -8,7 +8,7 @@ class TimeSeriesSplit:
     Time series cross-validator that provides train/test indices for each split.
     Splits data so that the training set is always before the test set in time.
     """
-    def __init__(self, n_splits: int = 5, test_size: int = None, max_train_size: int = None, step_size: int = 1):
+    def __init__(self, n_splits: int = 5, test_size: Optional[int] = None, max_train_size: Optional[int] = None, step_size: int = 1):
         self.n_splits = n_splits
         self.test_size = test_size
         self.max_train_size = max_train_size

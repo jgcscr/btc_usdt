@@ -5,18 +5,20 @@ Refactored from scripts/backtest.py to use centralized config and helpers.
 """
 import numpy as np
 import pandas as pd
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 import math
 
 # Use absolute imports from the package
-from btc_usdt_pipeline import config
-from btc_usdt_pipeline.utils.helpers import setup_logger, ParameterValidationError, DataAlignmentError
+from btc_usdt_pipeline.utils.config_manager import config_manager
+from btc_usdt_pipeline.utils.helpers import setup_logger
+from btc_usdt_pipeline.exceptions import ParameterValidationError, DataAlignmentError
+from btc_usdt_pipeline.types import TradeLogType, MetricsDict
 # Note: generate_signals is called *before* the backtest function usually.
 # The backtest function receives the signals as input.
 
 logger = setup_logger('backtest.log')
 
-def validate_inputs(df: pd.DataFrame, signals, required_cols=None, logger=None):
+def validate_inputs(df: pd.DataFrame, signals: Any, required_cols: Optional[List[str]] = None, logger: Optional[Any] = None) -> pd.DataFrame:
     """
     Validates DataFrame and signals for backtesting:
     - Checks required columns
@@ -25,7 +27,6 @@ def validate_inputs(df: pd.DataFrame, signals, required_cols=None, logger=None):
     - Index is properly ordered
     Raises ParameterValidationError or DataAlignmentError on failure.
     """
-    from btc_usdt_pipeline.utils.helpers import ParameterValidationError, DataAlignmentError
     logger = logger or setup_logger('backtest.log')
     required_cols = required_cols or ['open', 'high', 'low', 'close']
     for col in required_cols:
@@ -44,16 +45,17 @@ def validate_inputs(df: pd.DataFrame, signals, required_cols=None, logger=None):
             df = df.sort_index()
     return df
 
-def run_backtest(df: pd.DataFrame,
-                 signals: np.ndarray,
-                 initial_equity: float = config.INITIAL_EQUITY,
-                 atr_col: str = config.BACKTEST_ATR_COLUMN,
-                 sl_multiplier: float = config.ATR_STOP_LOSS_MULTIPLIER,
-                 tp_multiplier: float = config.ATR_TAKE_PROFIT_MULTIPLIER,
-                 commission_rate: float = config.COMMISSION_RATE,
-                 slippage_points: float = config.SLIPPAGE_POINTS,
-                 risk_fraction: float = config.RISK_FRACTION
-                 ) -> Tuple[List[float], List[Dict[str, Any]]]:
+def run_backtest(
+    df: pd.DataFrame,
+    signals: np.ndarray,
+    initial_equity: float = None,
+    atr_col: str = None,
+    sl_multiplier: float = None,
+    tp_multiplier: float = None,
+    commission_rate: float = None,
+    slippage_points: float = None,
+    risk_fraction: float = None
+) -> Tuple[List[float], TradeLogType]:
     """
     Runs an event-driven backtest with position sizing, commissions, and slippage.
 
@@ -69,7 +71,7 @@ def run_backtest(df: pd.DataFrame,
         risk_fraction (float): Fraction of equity to risk per trade.
 
     Returns:
-        Tuple[List[float], List[Dict[str, Any]]]:
+        Tuple[List[float], TradeLogType]:
             - equity_curve: List of equity values over time.
             - trade_log: List of dictionaries detailing each executed trade.
     """
@@ -79,6 +81,14 @@ def run_backtest(df: pd.DataFrame,
     df, signals = align_and_validate_data(df, signals, arr_name="signals", logger=logger)
 
     # --- Parameter validation ---
+    initial_equity = initial_equity if initial_equity is not None else config_manager.get('backtest.initial_equity')
+    atr_col = atr_col if atr_col is not None else config_manager.get('backtest.backtest_atr_column')
+    sl_multiplier = sl_multiplier if sl_multiplier is not None else config_manager.get('backtest.atr_stop_loss_multiplier')
+    tp_multiplier = tp_multiplier if tp_multiplier is not None else config_manager.get('backtest.atr_take_profit_multiplier')
+    commission_rate = commission_rate if commission_rate is not None else config_manager.get('backtest.commission_rate')
+    slippage_points = slippage_points if slippage_points is not None else config_manager.get('backtest.slippage_points')
+    risk_fraction = risk_fraction if risk_fraction is not None else config_manager.get('backtest.risk_fraction')
+
     if sl_multiplier <= 0 or tp_multiplier <= 0:
         logger.error("sl_multiplier and tp_multiplier must be positive.")
         raise ParameterValidationError("sl_multiplier and tp_multiplier must be positive.")
@@ -108,7 +118,7 @@ def run_backtest(df: pd.DataFrame,
     position = 0 # 0: Flat, 1: Long, -1: Short
     position_size = 0.0 # Size of the current position in base asset (e.g., BTC)
     entry_price = 0.0
-    trade_log: List[Dict[str, Any]] = []
+    trade_log: TradeLogType = []
     stop_loss = None
     take_profit = None
     current_trade_index = -1 # Index in trade_log for the currently open trade
@@ -131,6 +141,7 @@ def run_backtest(df: pd.DataFrame,
         exit_price = None
         pnl = 0.0
         trade_closed = False
+        log_reason = None  # Initialize before use
 
         # --- Slippage Model ---
         # For LONG positions:
@@ -142,13 +153,13 @@ def run_backtest(df: pd.DataFrame,
 
         if position == 1: # Currently Long
             # Check Stop Loss first (most conservative)
-            if low <= stop_loss:
-                exit_price = stop_loss - slippage_points # LONG exit: receive less
+            if stop_loss is not None and low is not None and low <= stop_loss:
+                exit_price = stop_loss - slippage_points if stop_loss is not None and slippage_points is not None else None # LONG exit: receive less
                 trade_closed = True
                 log_reason = "SL"
             # Check Take Profit
-            elif high >= take_profit:
-                exit_price = take_profit - slippage_points # LONG exit: receive less
+            elif take_profit is not None and high is not None and high >= take_profit:
+                exit_price = take_profit - slippage_points if take_profit is not None and slippage_points is not None else None # LONG exit: receive less
                 trade_closed = True
                 log_reason = "TP"
 
@@ -171,13 +182,13 @@ def run_backtest(df: pd.DataFrame,
 
         elif position == -1: # Currently Short
             # Check Stop Loss first
-            if high >= stop_loss:
-                exit_price = stop_loss + slippage_points # SHORT exit: pay more
+            if stop_loss is not None and high is not None and high >= stop_loss:
+                exit_price = stop_loss + slippage_points if stop_loss is not None and slippage_points is not None else None # SHORT exit: pay more
                 trade_closed = True
                 log_reason = "SL"
             # Check Take Profit
-            elif low <= take_profit:
-                exit_price = take_profit + slippage_points # SHORT exit: pay more
+            elif take_profit is not None and low is not None and low <= take_profit:
+                exit_price = take_profit + slippage_points if take_profit is not None and slippage_points is not None else None # SHORT exit: pay more
                 trade_closed = True
                 log_reason = "TP"
 
@@ -262,36 +273,36 @@ def run_backtest(df: pd.DataFrame,
     # If position is still open at the end, mark it based on the last close price
     if position != 0 and current_trade_index >= 0 and equity > 0:
         last_close = df['close'].iloc[-1]
-        # Apply slippage on forced exit at end of data
-        if position == 1:
-            exit_price = last_close - slippage_points # LONG exit: receive less
-            pnl = (exit_price - entry_price) * position_size
-        else: # position == -1
-            exit_price = last_close + slippage_points # SHORT exit: pay more
-            pnl = (entry_price - exit_price) * position_size
+        if last_close is not None:
+            if position == 1:
+                exit_price = last_close - slippage_points # LONG exit: receive less
+                pnl = (exit_price - entry_price) * position_size
+            else: # position == -1
+                exit_price = last_close + slippage_points # SHORT exit: pay more
+                pnl = (entry_price - exit_price) * position_size
 
-        commission = abs(pnl) * commission_rate # Commission on exit value
-        net_pnl = pnl - commission
-        equity += net_pnl # Update final equity
-        equity_curve[-1] = float(max(equity, 0)) # Ensure last point is float
+            commission = abs(pnl) * commission_rate # Commission on exit value
+            net_pnl = pnl - commission
+            equity += net_pnl # Update final equity
+            equity_curve[-1] = float(max(equity, 0)) # Ensure last point is float
 
-        trade_log[current_trade_index].update({
-            'Exit': exit_price,
-            'Exit_idx': df.index[-1],
-            'PnL': net_pnl,
-            'Commission': trade_log[current_trade_index].get('Commission', 0) + commission, # Sum entry and exit commissions
-            'Exit Reason': 'EndOfData'
-        })
-        logger.info(f"Closing open {trade_log[current_trade_index]['Type']} position at end of data (~{exit_price:.2f}). PnL: {net_pnl:.2f}, Final Equity: {equity:.2f}")
+            trade_log[current_trade_index].update({
+                'Exit': exit_price,
+                'Exit_idx': df.index[-1],
+                'PnL': net_pnl,
+                'Commission': trade_log[current_trade_index].get('Commission', 0) + commission, # Sum entry and exit commissions
+                'Exit Reason': 'EndOfData'
+            })
+            logger.info(f"Closing open {trade_log[current_trade_index]['Type']} position at end of data (~{exit_price:.2f}). PnL: {net_pnl:.2f}, Final Equity: {equity:.2f}")
 
     logger.info(f"Backtest finished. Final Equity: {equity_curve[-1]:.2f}. Total Trades Logged: {len(trade_log)}")
     return [float(e) for e in equity_curve], trade_log
 
-def estimate_total_slippage_cost(trade_log):
+def estimate_total_slippage_cost(trade_log: TradeLogType) -> float:
     """
     Estimate the total slippage cost across all trades in the trade log.
     Args:
-        trade_log (list): List of trade dictionaries from run_backtest.
+        trade_log (TradeLogType): List of trade dictionaries from run_backtest.
     Returns:
         float: Total slippage cost (absolute sum of entry and exit slippage).
     """

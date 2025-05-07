@@ -17,26 +17,13 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 from btc_usdt_pipeline.utils.data_processing import calculate_metrics
-
-# --- Custom Exceptions ---
-class BacktestError(Exception):
-    """Base exception for backtesting errors."""
-    pass
-
-class DataAlignmentError(BacktestError):
-    """Raised when data and signals are misaligned."""
-    pass
-
-class ParameterValidationError(BacktestError):
-    """Raised when invalid parameters are provided to backtest or related functions."""
-    pass
-
-class OptimizationError(Exception):
-    """Raised for errors during optimization routines."""
-    pass
+from btc_usdt_pipeline.exceptions import BacktestError, DataAlignmentError, ParameterValidationError, OptimizationError
+from btc_usdt_pipeline.utils.logging_config import setup_logging
+from btc_usdt_pipeline.io.serialization import to_json, save_json, load_json
+from btc_usdt_pipeline.types import TradeLogType, MetricsDict
 
 # --- Logger Setup ---
-def setup_logger(log_filename: str, level: str = None, logs_dir: 'Path' = None) -> logging.Logger:
+def setup_logger(log_filename: str, level: Optional[str] = None, logs_dir: Optional[Path] = None) -> logging.Logger:
     """
     Sets up a logger that writes to a file and console.
     Uses configuration for log level, format, and base directory.
@@ -71,42 +58,12 @@ def setup_logger(log_filename: str, level: str = None, logs_dir: 'Path' = None) 
     return logger
 
 # Setup a general logger for utils functions themselves using the name from config
-utils_logger = setup_logger('utils.log')
-
-# --- JSON Handling ---
-def save_json(data: Dict, file_path: Path) -> None:
-    """Saves data to a JSON file."""
-    logger = setup_logger('utils.log')
-    try:
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(file_path, 'w') as f:
-            json.dump(data, f, indent=4)
-        logger.info(f"Saved JSON data to {file_path}")
-    except Exception as e:
-        logger.error(f"Error saving JSON file {file_path}: {e}")
-
-def load_json(file_path: Path) -> Optional[Dict]:
-    """Loads data from a JSON file."""
-    logger = setup_logger('utils.log')
-    if not file_path.exists():
-        logger.error(f"JSON file not found: {file_path}")
-        return None
-    try:
-        with open(file_path, 'r') as f:
-            data = json.load(f)
-        logger.info(f"Loaded JSON data from {file_path}")
-        return data
-    except json.JSONDecodeError as e:
-        logger.error(f"Error decoding JSON from {file_path}: {e}")
-        return None
-    except Exception as e:
-        logger.error(f"Error reading JSON file {file_path}: {e}")
-        return None
+utils_logger = setup_logging(log_filename='utils.log')
 
 # --- Data Splitting ---
 def split_data(df: pd.DataFrame,
-               train_frac: float = None,
-               val_frac: float = None) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+               train_frac: Optional[float] = None,
+               val_frac: Optional[float] = None) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Split DataFrame into train, validation, and test sets by time order.
     Returns: train_df, val_df, test_df
@@ -130,16 +87,16 @@ def split_data(df: pd.DataFrame,
     return train_df, val_df, test_df
 
 # --- Trade Log Summary ---
-def print_trade_summary(trade_log: List[Dict[str, Any]], num_trades: int = 10) -> None:
-    """Prints a summary of the first and last few trades."""
+def print_trade_summary(trade_log: TradeLogType, num_trades: int = 10) -> None:
+    """Logs a summary of the first and last few trades."""
     if not trade_log:
-        print("No trades executed.")
+        utils_logger.info("No trades executed.")
         return
 
-    print(f"\n--- Trade Log Summary (First {num_trades} and Last {num_trades}) ---")
+    utils_logger.info(f"--- Trade Log Summary (First {num_trades} and Last {num_trades}) ---")
     header = f"{'Type':<5} {'Entry Idx':<20} {'Entry Pr':>10} {'Exit Idx':<20} {'Exit Pr':>10} {'Size':>10} {'PnL':>12} {'Reason':<8}"
-    print(header)
-    print("-" * len(header))
+    utils_logger.info(header)
+    utils_logger.info("-" * len(header))
 
     trades_to_show = trade_log[:num_trades]
     if len(trade_log) > 2 * num_trades:
@@ -150,7 +107,7 @@ def print_trade_summary(trade_log: List[Dict[str, Any]], num_trades: int = 10) -
 
     for trade in trades_to_show:
         if trade.get('Type') == '...':
-            print("...")
+            utils_logger.info("...")
             continue
 
         entry_idx_str = str(trade.get('Entry_idx', 'N/A'))
@@ -158,7 +115,7 @@ def print_trade_summary(trade_log: List[Dict[str, Any]], num_trades: int = 10) -
         if len(entry_idx_str) > 19: entry_idx_str = entry_idx_str[:19]
         if len(exit_idx_str) > 19: exit_idx_str = exit_idx_str[:19]
 
-        print(f"{trade.get('Type', '?'):<5} "
+        utils_logger.info(f"{trade.get('Type', '?'):<5} "
               f"{entry_idx_str:<20} "
               f"{trade.get('Entry', 0.0):>10.2f} "
               f"{exit_idx_str:<20} "
@@ -166,10 +123,13 @@ def print_trade_summary(trade_log: List[Dict[str, Any]], num_trades: int = 10) -
               f"{trade.get('Size', 0.0):>10.4f} "
               f"{trade.get('PnL', 0.0):>12.2f} "
               f"{trade.get('Exit Reason', ''):<8}")
-    print("-" * len(header))
+    utils_logger.info("-" * len(header))
 
 # --- Target Variable Creation ---
-def make_binary_target(df: pd.DataFrame, future_window: int = None, threshold_usd: float = None, target_col_name: str = None) -> pd.DataFrame:
+def make_binary_target(df: pd.DataFrame,
+                       future_window: Optional[int] = None,
+                       threshold_usd: Optional[float] = None,
+                       target_col_name: Optional[str] = None) -> pd.DataFrame:
     """
     Creates a binary target column based on future price movement.
     1 if the price moves up by at least threshold_usd within future_window bars.
@@ -213,7 +173,9 @@ def make_binary_target(df: pd.DataFrame, future_window: int = None, threshold_us
     return df
 
 # --- Sequence Creation for RNNs ---
-def create_sequences(data: np.ndarray, targets: np.ndarray, timesteps: int = None) -> Tuple[np.ndarray, np.ndarray]:
+def create_sequences(data: np.ndarray,
+                     targets: np.ndarray,
+                     timesteps: Optional[int] = None) -> Tuple[np.ndarray, np.ndarray]:
     """
     Creates sequences for LSTM/GRU models using TimeseriesGenerator.
 
@@ -238,7 +200,9 @@ def create_sequences(data: np.ndarray, targets: np.ndarray, timesteps: int = Non
     return X_seq, y_seq
 
 # --- Plot Equity Curve ---
-def plot_equity_curve(equity_curve: List[float], index: pd.DatetimeIndex, save_path: Optional[Path] = None) -> None:
+def plot_equity_curve(equity_curve: List[float],
+                      index: pd.DatetimeIndex,
+                      save_path: Optional[Path] = None) -> None:
     """Plots the equity curve over time."""
     logger = setup_logger('utils.log')
     if not equity_curve or len(equity_curve) - 1 != len(index):

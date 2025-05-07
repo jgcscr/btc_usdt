@@ -4,7 +4,7 @@ Entry point script to compute features using the btc_usdt_pipeline package.
 Run as: python -m scripts.compute_features
 """
 import argparse
-from btc_usdt_pipeline.utils.data_manager import DataManager
+from btc_usdt_pipeline.io.data_manager import DataManager
 from btc_usdt_pipeline.features.compute_features import main as compute_features_main
 
 def main():

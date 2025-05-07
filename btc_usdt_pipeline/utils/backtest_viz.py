@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import plotly.graph_objs as go
 import plotly.express as px
 from typing import List, Dict, Any, Optional
+from btc_usdt_pipeline.utils.metrics import calculate_performance_metrics
+from btc_usdt_pipeline.visualization.backtest_viz import *
 
 def visualize_equity_curve(equity_curve: List[float], title: str = "Equity Curve", index: Optional[pd.Index] = None, use_plotly: bool = False):
     """
@@ -130,37 +132,12 @@ def visualize_return_heatmap(df: pd.DataFrame, freq: str = 'M', use_plotly: bool
         plt.tight_layout()
         plt.show()
 
-def generate_performance_metrics(trade_log: List[Dict[str, Any]], equity_curve: List[float]) -> Dict[str, Any]:
-    """
-    Generate trade distribution statistics and performance metrics.
-    Args:
-        trade_log: List of trade dicts.
-        equity_curve: List of equity values.
-    Returns:
-        Dictionary of metrics (win/loss ratio, profit factor, max drawdown, etc.)
-    """
-    wins = [t for t in trade_log if t['PnL'] and t['PnL'] > 0]
-    losses = [t for t in trade_log if t['PnL'] and t['PnL'] <= 0]
-    win_ratio = len(wins) / len(trade_log) if trade_log else 0
-    profit_factor = sum(t['PnL'] for t in wins) / abs(sum(t['PnL'] for t in losses)) if losses else float('inf')
-    equity = np.array(equity_curve)
-    running_max = np.maximum.accumulate(equity)
-    drawdown = (equity - running_max) / running_max
-    max_drawdown = drawdown.min() if len(drawdown) > 0 else 0
-    return {
-        'total_trades': len(trade_log),
-        'win_ratio': win_ratio,
-        'profit_factor': profit_factor,
-        'max_drawdown': max_drawdown,
-        'total_return': (equity[-1] / equity[0] - 1) if len(equity) > 1 else 0
-    }
-
 def export_html_report(equity_curve: List[float], trade_log: List[Dict[str, Any]], df: pd.DataFrame, filename: str = "backtest_report.html"):
     """
     Export a simple HTML report with equity curve, drawdown, and trade stats using Plotly.
     """
     import plotly.offline as pyo
-    metrics = generate_performance_metrics(trade_log, equity_curve)
+    metrics = calculate_performance_metrics(equity_curve, trade_log)
     # Equity curve
     fig1 = go.Figure()
     fig1.add_trace(go.Scatter(x=df.index, y=equity_curve, mode='lines', name='Equity'))
@@ -176,11 +153,15 @@ def export_html_report(equity_curve: List[float], trade_log: List[Dict[str, Any]
     stats_html = f"""
     <h2>Performance Metrics</h2>
     <ul>
-        <li>Total Trades: {metrics['total_trades']}</li>
+        <li>Total Trades: {metrics['trades']}</li>
         <li>Win Ratio: {metrics['win_ratio']:.2%}</li>
         <li>Profit Factor: {metrics['profit_factor']:.2f}</li>
         <li>Max Drawdown: {metrics['max_drawdown']:.2%}</li>
         <li>Total Return: {metrics['total_return']:.2%}</li>
+        <li>Sharpe Ratio: {metrics['sharpe']:.2f}</li>
+        <li>Sortino Ratio: {metrics['sortino']:.2f}</li>
+        <li>Calmar Ratio: {metrics['calmar']:.2f}</li>
+        <li>CAGR: {metrics['cagr']:.2%}</li>
     </ul>
     """
     with open(filename, "w") as f:

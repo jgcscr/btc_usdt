@@ -5,9 +5,11 @@ Utility functions for DataFrame optimization, preprocessing, and metrics calcula
 """
 import pandas as pd
 import numpy as np
-from typing import Optional
+from typing import Optional, Any, Dict
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, log_loss
-from btc_usdt_pipeline.utils.helpers import DataAlignmentError, setup_logger
+from btc_usdt_pipeline.exceptions import DataAlignmentError
+from btc_usdt_pipeline.utils.helpers import setup_logger
+from btc_usdt_pipeline.types import MetricsDict
 
 def optimize_dataframe_dtypes(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -99,7 +101,7 @@ def preprocess_data(df: pd.DataFrame, sort_by: Optional[str] = None) -> pd.DataF
     df = df.fillna(method='ffill').fillna(method='bfill')
     return df
 
-def calculate_metrics(y_true, y_pred) -> dict:
+def calculate_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> MetricsDict:
     """
     Calculate common classification metrics.
     Args:
@@ -110,7 +112,7 @@ def calculate_metrics(y_true, y_pred) -> dict:
     Example:
         metrics = calculate_metrics(y_true, y_pred)
     """
-    metrics = {}
+    metrics: MetricsDict = {}
     try:
         metrics['accuracy'] = accuracy_score(y_true, y_pred)
         metrics['precision'] = precision_score(y_true, y_pred, zero_division=0)

@@ -1,0 +1,18 @@
+# Data source and processing configuration
+
+# Directory for all data files
+# Example: "data/"
+data_dir: "data/"
+
+# Path to raw and enriched data files
+raw_data_path: "data/1m_btcusdt_raw.parquet"
+enriched_data_path: "data/1m_btcusdt_enriched.parquet"
+
+# Binance API settings
+binance_api_url: "https://api.binance.com/api/v3/klines"
+symbol: "BTCUSDT"
+interval: "1m"
+fetch_limit: 1000
+fetch_delay_seconds: 1
+
+# Add more data-related settings as needed

@@ -17,7 +17,8 @@ except ImportError:
     TF_AVAILABLE = False
 
 from btc_usdt_pipeline import config
-from btc_usdt_pipeline.utils.helpers import setup_logger, create_sequences, save_json
+from btc_usdt_pipeline.utils.helpers import setup_logger, create_sequences
+from btc_usdt_pipeline.io.serialization import save_json, load_json
 
 logger = setup_logger('model_management.log')
 
@@ -112,15 +113,17 @@ class ModelManager:
             try:
                 if name in ['rf', 'xgb', 'lgbm']:
                     if not X_tree.empty and not missing_tree_features:
-                        probs = model.predict_proba(X_tree)[:, 1]
-                        predictions[name] = pd.Series(probs, index=valid_tree_indices)
+                        if hasattr(model, 'predict_proba'):
+                            probs = model.predict_proba(X_tree)[:, 1]
+                            predictions[name] = pd.Series(probs, index=valid_tree_indices)
                     else:
                         logger.warning(f"Skipping prediction for {name} due to missing features or empty data after NaN drop.")
 
                 elif name in ['lstm', 'gru']:
                     if X_seq.shape[0] > 0 and not missing_seq_features:
-                        probs = model.predict(X_seq).flatten()
-                        predictions[name] = pd.Series(probs, index=valid_seq_indices)
+                        if hasattr(model, 'predict'):
+                            probs = model.predict(X_seq).flatten()
+                            predictions[name] = pd.Series(probs, index=valid_seq_indices)
                     else:
                         logger.warning(f"Skipping prediction for {name} due to insufficient data for sequences or missing features.")
 
@@ -158,7 +161,7 @@ class ModelManager:
         output_df['index'] = output_df.index.astype(str)
         predictions_dict = output_df.to_dict(orient='list')
 
-        save_path = config.MODEL_PREDICTIONS_PATH
+        save_path = str(config.MODEL_PREDICTIONS_PATH)
         try:
             save_json(predictions_dict, save_path)
             logger.info(f"Predictions saved to {save_path}")

@@ -5,8 +5,9 @@ from typing import Callable, List, Dict, Any, Optional
 from datetime import datetime
 import threading
 import sched
+from btc_usdt_pipeline.utils.logging_config import setup_logging
 
-logger = logging.getLogger("btc_usdt_pipeline.utils.workflow")
+logger = setup_logging(log_filename='workflow.log')
 
 class TaskError(Exception):
     pass
@@ -18,7 +19,7 @@ class TaskRunner:
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.dependencies = dependencies or []
-        self.status = 'pending'
+        self.status: str = 'pending'  # Change from None to str type annotation
         self.last_error = None
         self.result = None
 
@@ -43,10 +44,10 @@ class TaskRunner:
 
 class Pipeline:
     def __init__(self, name: str):
-        self.name = name
-        self.tasks: Dict[str, TaskRunner] = {}
+        self.name: str = name
+        self.status: str = ''  # Initialize as empty string to avoid Optional[str] assignment issues
+        self.tasks: Dict[str, 'TaskRunner'] = {}
         self.task_order: List[str] = []
-        self.status = 'pending'
         self.context: Dict[str, Any] = {}
         self.history: List[Dict[str, Any]] = []
 
@@ -149,28 +150,28 @@ class WorkflowScheduler:
 # --- Workflow CLI ---
 WORKFLOWS: Dict[str, Pipeline] = {}
 
-def list_workflows():
-    print("Available workflows:", list(WORKFLOWS.keys()))
+def list_workflows() -> None:
+    logger.info("Available workflows: %s", list(WORKFLOWS.keys()))
 
-def run_workflow(name: str):
+def run_workflow(name: str) -> None:
     if name not in WORKFLOWS:
-        print(f"Workflow {name} not found.")
+        logger.error(f"Workflow {name} not found.")
         return
     WORKFLOWS[name].run()
 
-def workflow_status(name: str):
+def workflow_status(name: str) -> None:
     if name not in WORKFLOWS:
-        print(f"Workflow {name} not found.")
+        logger.error(f"Workflow {name} not found.")
         return
-    print(f"Workflow {name} status: {WORKFLOWS[name].status}")
+    logger.info(f"Workflow {name} status: {WORKFLOWS[name].status}")
 
-def schedule_workflow(name: str, cron: str):
+def schedule_workflow(name: str, cron: str) -> None:
     if name not in WORKFLOWS:
-        print(f"Workflow {name} not found.")
+        logger.error(f"Workflow {name} not found.")
         return
     scheduler = WorkflowScheduler()
     scheduler.schedule(WORKFLOWS[name], cron)
-    print(f"Scheduled workflow {name} with cron '{cron}'")
+    logger.info(f"Scheduled workflow {name} with cron '{cron}'")
 
 # --- Register Example Workflow ---
 def register_default_workflow():
@@ -200,4 +201,4 @@ if __name__ == '__main__':
     elif args.command == 'schedule_workflow' and args.name and args.cron:
         schedule_workflow(args.name, args.cron)
     else:
-        print("Invalid command or missing arguments.")
+        logger.error("Invalid command or missing arguments.")

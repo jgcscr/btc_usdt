@@ -19,7 +19,7 @@ class PredictionMonitor:
         os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
 
     def log_prediction(self, prediction: Any, features: Dict[str, Any]) -> str:
-        pred_id = f"pred_{int(time.time() * 1000)}_{np.random.randint(1e6)}"
+        pred_id = f"pred_{int(time.time() * 1000)}_{np.random.randint(1_000_000)}"
         entry = {
             "id": pred_id,
             "timestamp": datetime.utcnow().isoformat(),
@@ -118,6 +118,8 @@ def periodic_monitoring_check(monitor: PredictionMonitor, tracker: PerformanceTr
     df = monitor.load_logs()
     if not df.empty:
         current_data = pd.DataFrame(list(df["features"]))
+        frac = 1.0  # Default to 1.0 if not defined elsewhere
+        idx = np.random.randint(0, int(len(df) * frac))
         drift_report = drift_detector.detect_drift(reference_data, current_data, threshold=drift_threshold)
         drifted = {k: v for k, v in drift_report.items() if v["drift"]}
         if drifted:

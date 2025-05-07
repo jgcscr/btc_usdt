@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from typing import List, Callable, Optional, Dict, Any
+from typing import List, Callable, Optional, Dict, Any, Union
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 from sklearn.feature_selection import VarianceThreshold
@@ -96,26 +96,33 @@ def correlation_selector(df: pd.DataFrame, threshold: float = 0.95) -> List[str]
 
 # --- FeaturePipeline Class ---
 class FeaturePipeline:
-    def __init__(self):
-        self.transformers: List[BaseEstimator] = []
-        self.fitted = False
-    def add_transformer(self, transformer: BaseEstimator):
+    def __init__(self) -> None:
+        self.transformers: List[Any] = []
+        self.fitted: bool = False
+        self.columns_: Optional[pd.Index] = None
+        self.index_: Optional[pd.Index] = None
+    def add_transformer(self, transformer: Any) -> None:
         self.transformers.append(transformer)
-    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def fit(self, df: pd.DataFrame) -> 'FeaturePipeline':
         for t in self.transformers:
-            df = t.fit(df).transform(df)
+            if hasattr(t, 'fit'):
+                t.fit(df)
         self.fitted = True
-        self.columns_ = df.columns.tolist()
+        self.columns_ = df.columns
         self.index_ = df.index
-        return df
+        return self
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         for t in self.transformers:
-            df = t.transform(df)
-        # Ensure index/columns integrity
-        df = df.reindex(columns=self.columns_, fill_value=np.nan)
-        df.index = self.index_ if len(df) == len(self.index_) else df.index
+            if hasattr(t, 'transform'):
+                df = t.transform(df)
+        if self.columns_ is not None:
+            df = df.reindex(columns=self.columns_, fill_value=np.nan)
+        if self.index_ is not None and len(df) == len(self.index_):
+            df.index = self.index_
         return df
-    def save_pipeline(self, path: str):
+    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        return self.fit(df).transform(df)
+    def save_pipeline(self, path: str) -> None:
         with open(path, 'wb') as f:
             pickle.dump(self, f)
     @staticmethod

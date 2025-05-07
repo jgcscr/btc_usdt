@@ -9,7 +9,9 @@ from typing import List, Dict
 from btc_usdt_pipeline import config
 from btc_usdt_pipeline.utils.helpers import setup_logger, make_binary_target
 from btc_usdt_pipeline.utils.data_processing import optimize_dataframe_dtypes, preprocess_data
-from btc_usdt_pipeline.utils.data_manager import DataManager
+from btc_usdt_pipeline.io.data_manager import DataManager
+from btc_usdt_pipeline.utils.data_quality import detect_missing_data
+from btc_usdt_pipeline.utils.config_manager import config_manager
 
 logger = setup_logger('compute_features.log')
 
@@ -214,8 +216,8 @@ def main(input_file=None, output_file=None, sample=False):
         sample (bool, optional): Whether to use a sample of data. Defaults to False.
     """
     logger.info("Starting feature computation process...")
-    raw_data_path = input_file if input_file is not None else config.RAW_DATA_PATH
-    enriched_data_path = output_file if output_file is not None else config.ENRICHED_DATA_PATH
+    raw_data_path = input_file if input_file is not None else config_manager.get('data.raw_data_path')
+    enriched_data_path = output_file if output_file is not None else config_manager.get('data.enriched_data_path')
 
     logger.info(f"Using input data from: {raw_data_path}")
     logger.info(f"Will save output data to: {enriched_data_path}")
@@ -260,7 +262,7 @@ def main(input_file=None, output_file=None, sample=False):
     try:
         df = calculate_indicators(df.copy()) # Pass copy to avoid modifying original df inplace during calculation
         # Select only the features defined in config to keep df clean
-        base_cols_to_keep = ['open', 'high', 'low', 'close', 'volume'] + config.FEATURES_1M
+        base_cols_to_keep = ['open', 'high', 'low', 'close', 'volume'] + config_manager.get('data.features_1m', [])
         # Filter df to keep only necessary base columns + newly calculated 1m features
         # Handle potential missing columns gracefully
         missing_1m_features = [f for f in config.FEATURES_1M if f not in df.columns]
@@ -307,6 +309,11 @@ def main(input_file=None, output_file=None, sample=False):
     # Alternatively, drop first N rows if confident about lookback calculation:
     # df = df.iloc[required_lookback:]
     logger.info(f"Dropped {initial_len - len(df)} rows due to NaN values after feature/target calculation.")
+
+    # --- Data Quality Check ---
+    quality_report = detect_missing_data(df, critical_cols=cols_to_check_for_nan)
+    if quality_report['total_missing'] > 0:
+        logger.warning(f"Data quality issue: {quality_report}")
 
     if df.empty:
         logger.error("DataFrame is empty after calculating features and dropping NaNs. Cannot save.")

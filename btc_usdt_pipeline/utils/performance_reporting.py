@@ -4,29 +4,9 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import matplotlib.pyplot as plt
 import json
+from btc_usdt_pipeline.utils.metrics import calculate_performance_metrics
 
 # --- Performance Metrics ---
-def calculate_performance_metrics(equity_curve: List[float], trade_log: List[Dict[str, Any]], risk_free_rate: float = 0.0) -> Dict[str, Any]:
-    equity = np.array(equity_curve)
-    returns = np.diff(equity) / equity[:-1]
-    mean_return = np.mean(returns)
-    std_return = np.std(returns)
-    downside_std = np.std(returns[returns < 0]) if np.any(returns < 0) else 0
-    cagr = (equity[-1] / equity[0]) ** (252 / len(equity)) - 1 if len(equity) > 1 else 0
-    sharpe = (mean_return - risk_free_rate/252) / std_return * np.sqrt(252) if std_return > 0 else np.nan
-    sortino = (mean_return - risk_free_rate/252) / downside_std * np.sqrt(252) if downside_std > 0 else np.nan
-    max_drawdown = np.min((equity - np.maximum.accumulate(equity)) / np.maximum.accumulate(equity))
-    calmar = cagr / abs(max_drawdown) if max_drawdown != 0 else np.nan
-    return {
-        'sharpe': sharpe,
-        'sortino': sortino,
-        'calmar': calmar,
-        'cagr': cagr,
-        'max_drawdown': max_drawdown,
-        'total_return': (equity[-1] / equity[0] - 1) if len(equity) > 1 else 0,
-        'trades': len(trade_log)
-    }
-
 def generate_returns_table(equity_curve: List[float], freq: List[str] = ['M', 'Y'], index: Optional[pd.Index] = None) -> Dict[str, pd.DataFrame]:
     if index is None:
         index = pd.date_range(datetime.today(), periods=len(equity_curve), freq='D')

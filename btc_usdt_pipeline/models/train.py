@@ -10,10 +10,12 @@ from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from tensorflow import keras
 from pathlib import Path
+from typing import Tuple, Any, Optional
 
 # Use absolute imports from the package
 from btc_usdt_pipeline import config
 from btc_usdt_pipeline.utils.helpers import setup_logger, create_sequences
+from btc_usdt_pipeline.types import ModelInputType, ModelOutputType, MetricsDict
 
 logger = setup_logger('model_train.log')
 
@@ -44,7 +46,7 @@ def save_model(model: object, model_path: Path) -> None:
     except Exception as e:
         logger.error(f"Error saving model to {model_path}: {e}")
 
-def train_random_forest(X_train: pd.DataFrame, y_train: pd.Series):
+def train_random_forest(X_train: pd.DataFrame, y_train: pd.Series) -> Tuple[Any, MetricsDict]:
     """Trains and saves a Random Forest model."""
     logger.info('Training Random Forest Classifier...')
     model = RandomForestClassifier(
@@ -57,10 +59,13 @@ def train_random_forest(X_train: pd.DataFrame, y_train: pd.Series):
         logger.info('Random Forest Classifier training complete.')
         model_path = config.MODELS_DIR / config.RF_MODEL_NAME
         save_model(model, model_path)
+        metrics: MetricsDict = {"accuracy": model.score(X_train, y_train)}
+        return model, metrics
     except Exception as e:
         logger.error(f"Error training Random Forest: {e}", exc_info=True)
+        return None, {}
 
-def train_xgboost(X_train: pd.DataFrame, y_train: pd.Series, X_val: pd.DataFrame = None, y_val: pd.Series = None):
+def train_xgboost(X_train: pd.DataFrame, y_train: pd.Series, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.Series] = None) -> Tuple[Any, MetricsDict]:
     """Trains and saves an XGBoost model."""
     logger.info('Training XGBoost Classifier...')
     # Ensure y_train and y_val are integer type for XGBoost
@@ -86,14 +91,17 @@ def train_xgboost(X_train: pd.DataFrame, y_train: pd.Series, X_val: pd.DataFrame
         logger.info('XGBoost Classifier training complete.')
         model_path = config.MODELS_DIR / config.XGB_MODEL_NAME
         save_model(model, model_path)
+        metrics: MetricsDict = {"accuracy": model.score(X_train, y_train_xgb)}
+        return model, metrics
     except Exception as e:
         logger.error(f"Error training XGBoost: {e}", exc_info=True)
+        return None, {}
 
-def train_lstm(X_train, y_train, X_val, y_val):
+def train_lstm(X_train: np.ndarray, y_train: np.ndarray, X_val: np.ndarray, y_val: np.ndarray) -> Tuple[Any, MetricsDict]:
     """Trains an LSTM model."""
     if not TF_AVAILABLE:
         logger.error("TensorFlow not available. Skipping LSTM training.")
-        return
+        return None, {}
 
     logger.info("Training LSTM model...")
     model = Sequential([
@@ -110,23 +118,26 @@ def train_lstm(X_train, y_train, X_val, y_val):
         batch_size = config.SEQUENCE_BATCH_SIZE
 
         logger.info(f"Training LSTM with epochs={epochs}, batch_size={batch_size}, patience={config.EARLY_STOPPING_PATIENCE}")
-        model.fit(X_train, y_train,
-                  epochs=epochs,
-                  batch_size=batch_size,
-                  validation_data=(X_val, y_val),
-                  callbacks=[early_stopping],
-                  verbose=1)  # Set verbose to 1 or 2 to see progress
+        history = model.fit(X_train, y_train,
+                            epochs=epochs,
+                            batch_size=batch_size,
+                            validation_data=(X_val, y_val),
+                            callbacks=[early_stopping],
+                            verbose=1)  # Set verbose to 1 or 2 to see progress
 
         model_path = config.MODELS_DIR / config.LSTM_MODEL_NAME
         save_model(model, model_path)
+        metrics: MetricsDict = {"accuracy": float(history.history['accuracy'][-1])}
+        return model, metrics
     except Exception as e:
         logger.error(f"Error training or saving LSTM model: {e}", exc_info=True)
+        return None, {}
 
-def train_gru(X_train, y_train, X_val, y_val):
+def train_gru(X_train: np.ndarray, y_train: np.ndarray, X_val: np.ndarray, y_val: np.ndarray) -> Tuple[Any, MetricsDict]:
     """Trains a GRU model."""
     if not TF_AVAILABLE:
         logger.error("TensorFlow not available. Skipping GRU training.")
-        return
+        return None, {}
 
     logger.info("Training GRU model...")
     model = Sequential([
@@ -143,14 +154,26 @@ def train_gru(X_train, y_train, X_val, y_val):
         batch_size = config.SEQUENCE_BATCH_SIZE
 
         logger.info(f"Training GRU with epochs={epochs}, batch_size={batch_size}, patience={config.EARLY_STOPPING_PATIENCE}")
-        model.fit(X_train, y_train,
-                  epochs=epochs,
-                  batch_size=batch_size,
-                  validation_data=(X_val, y_val),
-                  callbacks=[early_stopping],
-                  verbose=1)  # Set verbose to 1 or 2 to see progress
+        history = model.fit(X_train, y_train,
+                            epochs=epochs,
+                            batch_size=batch_size,
+                            validation_data=(X_val, y_val),
+                            callbacks=[early_stopping],
+                            verbose=1)  # Set verbose to 1 or 2 to see progress
 
         model_path = config.MODELS_DIR / config.GRU_MODEL_NAME
         save_model(model, model_path)
+        metrics: MetricsDict = {"accuracy": float(history.history['accuracy'][-1])}
+        return model, metrics
     except Exception as e:
         logger.error(f"Error training or saving GRU model: {e}", exc_info=True)
+        return None, {}
+
+def predict_model(model: Any, X: ModelInputType) -> ModelOutputType:
+    """Generates predictions using a trained model."""
+    try:
+        predictions = model.predict(X)
+        return predictions
+    except Exception as e:
+        logger.error(f"Error during model prediction: {e}", exc_info=True)
+        return []

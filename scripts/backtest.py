@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt # For plotting results
 from btc_usdt_pipeline import config
 from btc_usdt_pipeline.trading.backtest import run_backtest # Import the core function
 from btc_usdt_pipeline.utils.helpers import setup_logger, calculate_metrics, print_trade_summary, plot_equity_curve, save_json
+from btc_usdt_pipeline.utils.config_manager import config_manager
 
 # Use a specific logger for this script
 logger = setup_logger('backtest_script.log')
@@ -19,11 +20,8 @@ logger = setup_logger('backtest_script.log')
 def main():
     logger.info("--- Running Backtest Script ---")
     try:
-        # Load enriched data
-        logger.info(f"Loading enriched data from: {config.ENRICHED_DATA_PATH}")
-        # Add note about memory usage
-        logger.info("Note: For very large datasets on memory-constrained environments (like Colab), consider loading data in chunks or using memory-efficient dtypes.")
-        df = pd.read_parquet(config.ENRICHED_DATA_PATH)
+        logger.info(f"Loading enriched data from: {config_manager.get('data.enriched_data_path')}")
+        df = pd.read_parquet(config_manager.get('data.enriched_data_path'))
         # Cast numeric columns to memory-efficient types
         for col in df.select_dtypes(include=['float64', 'float']).columns:
             df[col] = df[col].astype('float32')
@@ -35,7 +33,7 @@ def main():
         logger.info(f"Loaded enriched data: {df.shape}")
 
         # Load generated signals
-        signals_path = config.RESULTS_DIR / 'generated_signals.csv'
+        signals_path = config_manager.get('data.results_dir', 'results/') + '/generated_signals.csv'
         logger.info(f"Loading signals from: {signals_path}")
         if not signals_path.exists():
             logger.error(f"Signals file not found at {signals_path}. Run signal generation first.")
@@ -62,9 +60,9 @@ def main():
             return
 
         # Check if necessary ATR column exists
-        if config.BACKTEST_ATR_COLUMN not in df_aligned.columns:
-             logger.error(f"Required ATR column '{config.BACKTEST_ATR_COLUMN}' not found in data. Cannot run backtest.")
-             print(f"Error: Required ATR column '{config.BACKTEST_ATR_COLUMN}' not found.")
+        if config_manager.get('backtest.backtest_atr_column') not in df_aligned.columns:
+             logger.error(f"Required ATR column '{config_manager.get('backtest.backtest_atr_column')}' not found in data. Cannot run backtest.")
+             print(f"Error: Required ATR column '{config_manager.get('backtest.backtest_atr_column')}' not found.")
              return
 
         # Run Backtest (using the enhanced backtester from the package)
@@ -72,21 +70,21 @@ def main():
         equity_curve, trade_log = run_backtest(
             df=df_aligned,
             signals=signals_aligned,
-            initial_equity=config.INITIAL_EQUITY,
-            atr_col=config.BACKTEST_ATR_COLUMN,
-            sl_multiplier=config.ATR_STOP_LOSS_MULTIPLIER,
-            tp_multiplier=config.ATR_TAKE_PROFIT_MULTIPLIER,
-            commission_rate=config.COMMISSION_RATE,
-            slippage_points=config.SLIPPAGE_POINTS,
-            risk_fraction=config.RISK_FRACTION
+            initial_equity=config_manager.get('backtest.initial_equity'),
+            atr_col=config_manager.get('backtest.backtest_atr_column'),
+            sl_multiplier=config_manager.get('backtest.atr_stop_loss_multiplier'),
+            tp_multiplier=config_manager.get('backtest.atr_take_profit_multiplier'),
+            commission_rate=config_manager.get('backtest.commission_rate'),
+            slippage_points=config_manager.get('backtest.slippage_points'),
+            risk_fraction=config_manager.get('backtest.risk_fraction')
         )
 
         # Calculate and Print Metrics
         if equity_curve and trade_log:
-            metrics = calculate_metrics(equity_curve, trade_log, initial_equity=config.INITIAL_EQUITY)
+            metrics = calculate_metrics(equity_curve, trade_log, initial_equity=config_manager.get('backtest.initial_equity'))
             logger.info(f"Backtest Metrics: {metrics}")
             print("\n--- Backtest Results ---")
-            print(f"Initial Equity: ${config.INITIAL_EQUITY:,.2f}")
+            print(f"Initial Equity: ${config_manager.get('backtest.initial_equity'):,.2f}")
             print(f"Final Equity:   ${metrics['Final Equity']:,.2f}")
             print(f"Net Profit:     ${metrics['Net Profit']:,.2f} ({metrics['Net Profit %']:.2f}%)")
             print(f"Total Trades:   {metrics['Total Trades']}")
@@ -102,7 +100,7 @@ def main():
             print_trade_summary(trade_log)
 
             # Save results (Directory creation handled by plot_equity_curve and save_json in helpers)
-            results_path = config.RESULTS_DIR / 'backtest_results.json'
+            results_path = config_manager.get('data.results_dir', 'results/') + '/backtest_results.json'
             results_data = {
                 'metrics': metrics,
                 'trade_log': trade_log # Consider converting datetime index in log if needed
@@ -119,7 +117,7 @@ def main():
             print(f"Backtest results saved to {results_path}")
 
             # Plot equity curve (plot_equity_curve helper handles directory creation)
-            equity_curve_path = config.RESULTS_DIR / 'equity_curve.png'
+            equity_curve_path = config_manager.get('data.results_dir', 'results/') + '/equity_curve.png'
             plot_equity_curve(equity_curve, df_aligned.index, save_path=equity_curve_path) # Pass aligned index
             logger.info(f"Equity curve plot saved to {equity_curve_path}")
             print(f"Equity curve plot saved to {equity_curve_path}")

@@ -8,6 +8,7 @@ import pandas as pd
 from btc_usdt_pipeline.features.feature_pipeline import FeaturePipeline
 from btc_usdt_pipeline.utils.serialization import to_json
 from btc_usdt_pipeline.utils.helpers import setup_logger
+from btc_usdt_pipeline.types import FeatureDict, MetricsDict
 
 logger = setup_logger('model_deployment.log')
 
@@ -20,10 +21,10 @@ class ModelPackage:
     Supports versioning and A/B testing.
     """
     def __init__(self, model: Any, pipeline: FeaturePipeline, version: str, metadata: Optional[Dict[str, Any]] = None):
-        self.model = model
-        self.pipeline = pipeline
-        self.version = version
-        self.metadata = metadata or {}
+        self.model: Any = model
+        self.pipeline: FeaturePipeline = pipeline
+        self.version: str = version
+        self.metadata: Dict[str, Any] = metadata or {}
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
         try:
@@ -34,7 +35,7 @@ class ModelPackage:
             logger.error(f"Prediction error: {e}")
             raise ModelDeploymentError(f"Prediction failed: {e}")
 
-    def save(self, path: str):
+    def save(self, path: str) -> None:
         with open(path, 'wb') as f:
             pickle.dump(self, f)
         logger.info(f"ModelPackage saved to {path}")
@@ -50,29 +51,29 @@ class ModelRegistry:
     """
     Handles model versioning, A/B testing, and rollback.
     """
-    REGISTRY_PATH = os.path.join(os.path.dirname(__file__), '../../models/registry.json')
+    REGISTRY_PATH: str = os.path.join(os.path.dirname(__file__), '../../models/registry.json')
 
-    def __init__(self):
+    def __init__(self) -> None:
         os.makedirs(os.path.dirname(self.REGISTRY_PATH), exist_ok=True)
         self._load_registry()
 
-    def _load_registry(self):
+    def _load_registry(self) -> None:
         if os.path.exists(self.REGISTRY_PATH):
             with open(self.REGISTRY_PATH, 'r') as f:
                 self.registry = json.load(f)
         else:
             self.registry = {'active': None, 'versions': {}, 'ab_test': {}}
 
-    def _save_registry(self):
+    def _save_registry(self) -> None:
         with open(self.REGISTRY_PATH, 'w') as f:
             json.dump(self.registry, f, indent=2)
 
-    def register_model(self, version: str, path: str, metadata: Optional[Dict[str, Any]] = None):
+    def register_model(self, version: str, path: str, metadata: Optional[Dict[str, Any]] = None) -> None:
         self.registry['versions'][version] = {'path': path, 'metadata': metadata or {}, 'timestamp': time.time()}
         self._save_registry()
         logger.info(f"Registered model version {version} at {path}")
 
-    def set_active(self, version: str):
+    def set_active(self, version: str) -> None:
         if version not in self.registry['versions']:
             raise ModelDeploymentError(f"Version {version} not found in registry.")
         self.registry['active'] = version
@@ -88,19 +89,19 @@ class ModelRegistry:
             return self.registry['versions'][version]['path']
         return None
 
-    def rollback(self, to_version: str):
+    def rollback(self, to_version: str) -> None:
         self.set_active(to_version)
         logger.info(f"Rolled back to model version {to_version}")
 
     def list_versions(self) -> List[str]:
         return list(self.registry['versions'].keys())
 
-    def set_ab_test(self, version_a: str, version_b: str, ratio: float = 0.5):
+    def set_ab_test(self, version_a: str, version_b: str, ratio: float = 0.5) -> None:
         self.registry['ab_test'] = {'A': version_a, 'B': version_b, 'ratio': ratio}
         self._save_registry()
         logger.info(f"A/B test set: {version_a} vs {version_b} (ratio {ratio})")
 
-    def get_ab_test(self):
+    def get_ab_test(self) -> Dict[str, Any]:
         return self.registry.get('ab_test', {})
 
 # --- Prediction API ---

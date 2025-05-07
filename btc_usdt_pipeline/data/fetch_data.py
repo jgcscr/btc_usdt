@@ -11,7 +11,7 @@ from typing import Optional, List, Dict, Any
 
 from btc_usdt_pipeline import config
 from btc_usdt_pipeline.utils.helpers import setup_logger
-from btc_usdt_pipeline.utils.data_manager import DataManager
+from btc_usdt_pipeline.io.data_manager import DataManager
 from btc_usdt_pipeline.utils.data_processing import optimize_memory_usage
 
 logger = setup_logger('fetch_data.log')
@@ -19,14 +19,14 @@ logger = setup_logger('fetch_data.log')
 def get_klines(symbol: str, interval: str, start_time: Optional[int] = None, end_time: Optional[int] = None, limit: int = config.FETCH_LIMIT) -> Optional[List[List[Any]]]:
     """Fetches klines from Binance API with error handling."""
     params = {
-        'symbol': symbol,
-        'interval': interval,
-        'limit': limit
+        'symbol': str(symbol),
+        'interval': str(interval),
+        'limit': str(limit)
     }
     if start_time:
-        params['startTime'] = start_time
+        params['startTime'] = str(start_time)
     if end_time:
-        params['endTime'] = end_time
+        params['endTime'] = str(end_time)
 
     try:
         response = requests.get(config.BINANCE_API_URL, params=params, timeout=10) # Added timeout

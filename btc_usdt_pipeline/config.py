@@ -133,6 +133,3 @@ LIVE_TRADING = False # Set to True to enable actual execution calls (requires br
 LOG_LEVEL = "INFO" # e.g., "DEBUG", "INFO", "WARNING", "ERROR"
 LOG_FORMAT = '%(asctime)s %(levelname)-8s [%(name)s] [%(filename)s:%(lineno)d] %(message)s' # Added logger name
 LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-
-# At the end of the config file, update paths for Colab if needed
-ConfigManager(locals()).update_paths_for_colab()

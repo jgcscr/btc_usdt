@@ -28,8 +28,10 @@ import psutil
 import logging
 from functools import wraps
 from pathlib import Path
+from btc_usdt_pipeline.utils.logging_config import setup_logging
+from btc_usdt_pipeline.monitoring.memory import monitor_memory, check_memory_usage, memory_safe
 
-logger = logging.getLogger("btc_usdt_pipeline.utils.colab_utils")
+logger = setup_logging(log_filename='colab_utils.log')
 
 
 def is_colab():
@@ -147,57 +149,3 @@ class PeriodicCheckpointer:
     def maybe_checkpoint(self, iteration):
         if self.frequency > 0 and iteration % self.frequency == 0:
             save_checkpoint(self.obj, iteration, self.base_path)
-
-
-def monitor_memory(threshold_gb=11, check_interval=30):
-    """
-    Monitor Colab RAM usage and warn if above threshold.
-    Args:
-        threshold_gb (float): RAM usage threshold in GB.
-        check_interval (int): Seconds between checks.
-    """
-    if not is_colab():
-        return
-    try:
-        import IPython.display as display
-        while True:
-            mem = psutil.virtual_memory()
-            used_gb = mem.used / 1e9
-            if used_gb > threshold_gb:
-                print(f"[WARNING] High RAM usage: {used_gb:.2f} GB")
-                display.clear_output(wait=True)
-            time.sleep(check_interval)
-    except ImportError:
-        print("psutil not installed. Run `!pip install psutil` in Colab.")
-
-
-def check_memory_usage():
-    """
-    Prints and returns the current memory usage percentage.
-    Returns:
-        float: Memory usage percentage.
-    """
-    mem = psutil.virtual_memory()
-    usage_percent = mem.percent
-    print(f"[ColabUtils] Current memory usage: {usage_percent:.2f}%")
-    return usage_percent
-
-
-def memory_safe(min_free_percent=10):
-    """
-    Decorator to check memory usage before function execution.
-    If free memory is below min_free_percent, aborts execution.
-    Args:
-        min_free_percent (float): Minimum free memory percent required to run.
-    """
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            mem = psutil.virtual_memory()
-            free_percent = 100 - mem.percent
-            if free_percent < min_free_percent:
-                print(f"[ColabUtils] ABORT: Not enough free memory ({free_percent:.2f}% < {min_free_percent}%)")
-                return None
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
