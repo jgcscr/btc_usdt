@@ -36,6 +36,10 @@ def validate_inputs(df: pd.DataFrame, signals: Any, required_cols: Optional[List
         if df[col].isnull().any():
             logger.error(f"NaN values found in required column '{col}'.")
             raise ParameterValidationError(f"NaN values found in required column '{col}'.")
+        if col in ['close', 'high', 'low'] and (df[col] <= 0).any():
+            logger.error(f"Non-positive values found in '{col}'.")
+            raise ParameterValidationError(f"Non-positive values found in '{col}'.")
+
     if len(df) != len(signals):
         logger.error(f"DataFrame length ({len(df)}) and signals length ({len(signals)}) mismatch.")
         raise DataAlignmentError(f"DataFrame length ({len(df)}) and signals length ({len(signals)}) mismatch.")

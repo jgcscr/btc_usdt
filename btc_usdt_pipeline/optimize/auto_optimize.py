@@ -209,7 +209,7 @@ def main(n_trials=None, n_jobs=None):
         save_json(results, save_path)
         logger.info(f"Optimization results saved to {save_path}")
     except Exception as e:
-        logger.error(f"Failed to save optimization results to {save_path}")
+        logger.error(f"Failed to save optimization results to {save_path}: {e}", exc_info=True)
 
     logger.info("--- Auto Optimization Finished --- ")
 

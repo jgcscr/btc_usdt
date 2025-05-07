@@ -5,7 +5,7 @@ Utility functions for DataFrame optimization, preprocessing, and metrics calcula
 """
 import pandas as pd
 import numpy as np
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, Tuple
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, log_loss
 from btc_usdt_pipeline.exceptions import DataAlignmentError
 from btc_usdt_pipeline.utils.helpers import setup_logger
@@ -72,10 +72,11 @@ def optimize_memory_usage(df: pd.DataFrame, logger=None) -> pd.DataFrame:
 
     gc.collect()
     end_mem = df.memory_usage(deep=True).sum() / 1024 ** 2
+    reduction_pct = 100 * (start_mem - end_mem) / start_mem if start_mem > 0 else 0
     if logger:
-        logger.info(f"Memory usage after optimization: {end_mem:.2f} MB (reduced by {start_mem - end_mem:.2f} MB)")
+        logger.info(f"Memory usage after optimization: {end_mem:.2f} MB (reduced by {start_mem - end_mem:.2f} MB, {reduction_pct:.1f}% reduction)")
     else:
-        print(f"Memory usage after optimization: {end_mem:.2f} MB (reduced by {start_mem - end_mem:.2f} MB)")
+        print(f"Memory usage after optimization: {end_mem:.2f} MB (reduced by {start_mem - end_mem:.2f} MB, {reduction_pct:.1f}% reduction)")
     return df
 
 def preprocess_data(df: pd.DataFrame, sort_by: Optional[str] = None) -> pd.DataFrame:
@@ -124,11 +125,21 @@ def calculate_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> MetricsDict:
         metrics['error'] = str(e)
     return metrics
 
-def align_and_validate_data(df: pd.DataFrame, arr, arr_name="signals", index_col=None, logger=None):
+def align_and_validate_data(df: pd.DataFrame, arr, arr_name="signals", index_col=None, logger=None) -> Tuple[pd.DataFrame, Any]:
     """
     Validates and aligns a DataFrame and a signals/features array.
     Handles datetime and integer indices. Returns aligned (df, arr) or raises DataAlignmentError.
     Logs warnings for dropped data points.
+    Args:
+        df (pd.DataFrame): DataFrame to align.
+        arr: Array or Series to align with df.
+        arr_name (str): Name for logging.
+        index_col (str, optional): Column to use as index.
+        logger (logging.Logger, optional): Logger for messages.
+    Returns:
+        Tuple[pd.DataFrame, Any]: Aligned DataFrame and array.
+    Raises:
+        DataAlignmentError: If alignment fails.
     """
     logger = logger or setup_logger('utils.log')
     orig_len = len(df)

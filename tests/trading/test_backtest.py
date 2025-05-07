@@ -255,3 +255,11 @@ def test_negative_slippage():
     equity_curve, trade_log = run_backtest(df, signals, slippage_points=100)
     for trade in trade_log:
         assert abs(trade['Entry'] - df['close'].iloc[0]) >= 0
+
+def test_large_dataset_performance():
+    from btc_usdt_pipeline.trading.backtest import run_backtest
+    import numpy as np
+    df = generate_market_data(n=1_000_000)
+    signals = np.random.choice(["Long", "Short", "Flat"], size=1_000_000)
+    equity_curve, trade_log = run_backtest(df, signals, initial_equity=10000)
+    assert len(equity_curve) == len(df) + 1

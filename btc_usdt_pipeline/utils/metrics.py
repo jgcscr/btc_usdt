@@ -44,8 +44,20 @@ def calculate_performance_metrics(
     # Trade stats
     wins = [t for t in trade_log if t.get('PnL') is not None and t['PnL'] > 0]
     losses = [t for t in trade_log if t.get('PnL') is not None and t['PnL'] <= 0]
+    if len(trade_log) == 0:
+        return {
+            'sharpe': np.nan,
+            'sortino': np.nan,
+            'calmar': np.nan,
+            'cagr': np.nan,
+            'max_drawdown': np.nan,
+            'total_return': np.nan,
+            'trades': 0,
+            'win_ratio': np.nan,
+            'profit_factor': np.nan
+        }
     win_ratio = len(wins) / len(trade_log) if trade_log else 0
-    profit_factor = sum(t['PnL'] for t in wins) / abs(sum(t['PnL'] for t in losses)) if losses else float('inf')
+    profit_factor = sum(t['PnL'] for t in wins) / abs(sum(t['PnL'] for t in losses)) if losses and abs(sum(t['PnL'] for t in losses)) > 0 else float('inf')
     return {
         'sharpe': sharpe,
         'sortino': sortino,

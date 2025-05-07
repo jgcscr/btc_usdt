@@ -33,6 +33,17 @@ class TimeSeriesSplit:
 
 # Rolling window split generator
 def rolling_window_split(df: pd.DataFrame, window_size: int, step_size: int, test_size: int) -> Iterator[Tuple[np.ndarray, np.ndarray]]:
+    """
+    Generate rolling window train/test splits.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame.
+        window_size (int): Size of the training window.
+        step_size (int): Step size between splits.
+        test_size (int): Size of the test window.
+    Returns:
+        Iterator[Tuple[np.ndarray, np.ndarray]]: Iterator of (train_idx, test_idx) tuples.
+    """
     n = len(df)
     for start in range(0, n - window_size - test_size + 1, step_size):
         train_idx = np.arange(start, start + window_size)
