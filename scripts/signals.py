@@ -10,10 +10,10 @@ import json
 
 from btc_usdt_pipeline import config
 from btc_usdt_pipeline.trading.signals import generate_signals # Import the core function
-from btc_usdt_pipeline.utils.helpers import setup_logger, load_json # Changed import
+from btc_usdt_pipeline.utils.logging_config import setup_logging  # Changed from setup_logger
 
-# Use a specific logger for this script
-logger = setup_logger('generate_signals_script.log')
+# Setup logger
+logger = setup_logging(log_filename='signals.log')
 
 def main():
     logger.info("--- Running Signal Generation Script ---")

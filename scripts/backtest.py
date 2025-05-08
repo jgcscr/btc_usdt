@@ -11,11 +11,12 @@ import matplotlib.pyplot as plt # For plotting results
 
 from btc_usdt_pipeline import config
 from btc_usdt_pipeline.trading.backtest import run_backtest # Import the core function
-from btc_usdt_pipeline.utils.helpers import setup_logger, calculate_metrics, print_trade_summary, plot_equity_curve, save_json
+from btc_usdt_pipeline.utils.logging_config import setup_logging # Changed from setup_logger
+from btc_usdt_pipeline.utils.helpers import calculate_metrics, print_trade_summary, plot_equity_curve, save_json
 from btc_usdt_pipeline.utils.config_manager import config_manager
 
 # Use a specific logger for this script
-logger = setup_logger('backtest_script.log')
+logger = setup_logging(log_filename='backtest.log')
 
 def main():
     logger.info("--- Running Backtest Script ---")

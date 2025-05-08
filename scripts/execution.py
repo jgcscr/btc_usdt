@@ -8,10 +8,10 @@ Run as: python -m scripts.execution (for testing)
 
 # Use absolute imports from the package
 from btc_usdt_pipeline import config
-from btc_usdt_pipeline.utils.helpers import setup_logger
+from btc_usdt_pipeline.utils.logging_config import setup_logging  # Changed from setup_logger
 
 # Setup logger using the centralized configuration
-logger = setup_logger('execution_script.log') # Use script-specific log
+logger = setup_logging(log_filename='execution.log') # Use script-specific log
 
 def execute_trade(signal, entry, stop, target, position_size, live=False):
     """

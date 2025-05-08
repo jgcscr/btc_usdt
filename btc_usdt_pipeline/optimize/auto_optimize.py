@@ -16,7 +16,7 @@ from btc_usdt_pipeline.utils.data_manager import DataManager
 from btc_usdt_pipeline.utils.colab_utils import check_memory_usage, save_checkpoint, memory_safe
 from btc_usdt_pipeline.utils.data_processing import optimize_dataframe_dtypes
 from btc_usdt_pipeline.io.serialization import load_json, save_json
-from btc_usdt_pipeline.utils.logging_config import setup_logging
+from btc_usdt_pipeline.utils.logging_config import setup_logging  # Changed from setup_logger
 # Need adaptable training functions or direct model instantiation here
 from sklearn.ensemble import RandomForestClassifier
 import xgboost as xgb

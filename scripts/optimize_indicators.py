@@ -6,9 +6,9 @@ Run as: python -m scripts.optimize_indicators
 # Removed sys.path manipulation
 
 from btc_usdt_pipeline.optimize.optimize_indicators import main as optimize_indicators_main
-from btc_usdt_pipeline.utils.helpers import setup_logger
+from btc_usdt_pipeline.utils.logging_config import setup_logging  # Changed from setup_logger
 
-logger = setup_logger('optimize_indicators_script.log')
+logger = setup_logging(log_filename='optimize_indicators.log')
 
 if __name__ == '__main__':
     logger.info("--- Running Indicator Optimization Script ---")

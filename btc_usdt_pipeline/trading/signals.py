@@ -7,9 +7,9 @@ import numpy as np
 import pandas as pd
 from typing import List, Optional
 
-# Use absolute imports from the package
+from btc_usdt_pipeline.utils.logging_config import setup_logging  # Changed from setup_logger
+
 from btc_usdt_pipeline import config
-from btc_usdt_pipeline.utils.logging_config import setup_logging
 
 logger = setup_logging(log_filename='signals.log')
 
