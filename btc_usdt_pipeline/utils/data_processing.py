@@ -8,7 +8,7 @@ import numpy as np
 from typing import Optional, Any, Dict, Tuple
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, log_loss
 from btc_usdt_pipeline.exceptions import DataAlignmentError
-from btc_usdt_pipeline.utils.helpers import setup_logger
+from btc_usdt_pipeline.utils.logging_config import setup_logging # Changed import
 from btc_usdt_pipeline.types import MetricsDict
 
 def optimize_dataframe_dtypes(df: pd.DataFrame) -> pd.DataFrame:
@@ -141,7 +141,7 @@ def align_and_validate_data(df: pd.DataFrame, arr, arr_name="signals", index_col
     Raises:
         DataAlignmentError: If alignment fails.
     """
-    logger = logger or setup_logger('utils.log')
+    logger = logger or setup_logging(log_filename='utils.log') # Changed to setup_logging and use log_filename
     orig_len = len(df)
     arr_len = len(arr)
     # If index_col is provided, ensure it's the index
