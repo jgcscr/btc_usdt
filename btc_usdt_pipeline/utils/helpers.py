@@ -4,7 +4,6 @@ Utility functions for logging, configuration, data splitting, metrics calculatio
 and target variable creation.
 """
 import logging
-import logging.handlers
 import os
 import json
 import numpy as np
@@ -23,41 +22,6 @@ from btc_usdt_pipeline.io.serialization import to_json, save_json, load_json
 from btc_usdt_pipeline.types import TradeLogType, MetricsDict
 
 # --- Logger Setup ---
-def setup_logger(log_filename: str, level: Optional[str] = None, logs_dir: Optional[Path] = None) -> logging.Logger:
-    """
-    Sets up a logger that writes to a file and console.
-    Uses configuration for log level, format, and base directory.
-    Adds rotating file handler.
-    """
-    from btc_usdt_pipeline import config
-    level = level or config.LOG_LEVEL
-    logs_dir = logs_dir or config.LOGS_DIR
-    logs_dir.mkdir(parents=True, exist_ok=True)
-
-    log_filepath = logs_dir / log_filename
-
-    logger = logging.getLogger(log_filename.replace('.log', ''))  # Use filename base as logger name
-    logger.setLevel(level)
-
-    # Prevent adding multiple handlers if called repeatedly
-    if logger.hasHandlers():
-        logger.handlers.clear()
-
-    formatter = logging.Formatter(config.LOG_FORMAT, datefmt=config.LOG_DATE_FORMAT)
-
-    # Console Handler
-    ch = logging.StreamHandler()
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-
-    # Rotating File Handler (e.g., 5 files, 5MB each)
-    fh = logging.handlers.RotatingFileHandler(log_filepath, maxBytes=5*1024*1024, backupCount=5)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-
-    return logger
-
-# Setup a general logger for utils functions themselves using the name from config
 utils_logger = setup_logging(log_filename='utils.log')
 
 # --- Data Splitting ---
@@ -167,7 +131,7 @@ def make_binary_target(df: pd.DataFrame,
 
     # Log distribution
     target_counts = df[target_col_name].value_counts(normalize=True)
-    logger = setup_logger('utils.log')
+    logger = setup_logging('utils.log')
     logger.info(f"Created target '{target_col_name}' with window={future_window}, threshold=${threshold_usd:.2f}. Distribution:\n{target_counts}")
 
     return df
@@ -204,7 +168,7 @@ def plot_equity_curve(equity_curve: List[float],
                       index: pd.DatetimeIndex,
                       save_path: Optional[Path] = None) -> None:
     """Plots the equity curve over time."""
-    logger = setup_logger('utils.log')
+    logger = setup_logging('utils.log')
     if not equity_curve or len(equity_curve) - 1 != len(index):
         logger.error(f"Equity curve length ({len(equity_curve)}) must be one greater than index length ({len(index)}) for plotting.")
         print("Error: Cannot plot equity curve due to length mismatch.")

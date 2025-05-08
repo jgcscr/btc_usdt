@@ -5,4 +5,12 @@ log_dir: "logs/"
 environment: "dev"  # dev, test, prod
 results_dir: "results/"
 
+# Colab-specific configuration
+colab:
+  data_dir: "/content/drive/My Drive/btc_usdt_traiding_pipeline/data/"
+  models_dir: "/content/drive/My Drive/btc_usdt_traiding_pipeline/models/"
+  results_dir: "/content/drive/My Drive/btc_usdt_traiding_pipeline/results/"
+  logs_dir: "/content/drive/My Drive/btc_usdt_traiding_pipeline/logs/"
+  environment: "colab"
+
 # Add more application-level settings as needed
