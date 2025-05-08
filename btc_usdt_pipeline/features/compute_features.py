@@ -7,13 +7,13 @@ import numpy as np
 from typing import List, Dict
 
 from btc_usdt_pipeline import config
-from btc_usdt_pipeline.utils.helpers import setup_logger, make_binary_target
+from btc_usdt_pipeline.utils.logging_config import setup_logging
 from btc_usdt_pipeline.utils.data_processing import optimize_dataframe_dtypes, preprocess_data
 from btc_usdt_pipeline.io.data_manager import DataManager
 from btc_usdt_pipeline.utils.data_quality import detect_missing_data
 from btc_usdt_pipeline.utils.config_manager import config_manager
 
-logger = setup_logger('compute_features.log')
+logger = setup_logging(log_filename='compute_features.log')
 
 def standardize_column_names(df):
     """Standardize indicator column names to match config.FEATURES_1M format"""

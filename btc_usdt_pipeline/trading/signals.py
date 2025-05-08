@@ -9,9 +9,9 @@ from typing import List, Optional
 
 # Use absolute imports from the package
 from btc_usdt_pipeline import config
-from btc_usdt_pipeline.utils.helpers import setup_logger
+from btc_usdt_pipeline.utils.logging_config import setup_logging
 
-logger = setup_logger('signals.log')
+logger = setup_logging(log_filename='signals.log')
 
 def multi_timeframe_signal_logic(row: pd.Series, ensemble_prob: float, prob_threshold: float = config.PROBABILITY_THRESHOLD, signal_threshold: float = config.SIGNAL_THRESHOLD) -> str:
     """

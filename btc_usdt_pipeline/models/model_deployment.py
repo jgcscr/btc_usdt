@@ -7,10 +7,10 @@ import numpy as np
 import pandas as pd
 from btc_usdt_pipeline.features.feature_pipeline import FeaturePipeline
 from btc_usdt_pipeline.utils.serialization import to_json
-from btc_usdt_pipeline.utils.helpers import setup_logger
+from btc_usdt_pipeline.utils.logging_config import setup_logging
 from btc_usdt_pipeline.types import FeatureDict, MetricsDict
 
-logger = setup_logger('model_deployment.log')
+logger = setup_logging(log_filename='model_deployment.log')
 
 class ModelDeploymentError(Exception):
     pass

@@ -14,10 +14,10 @@ from typing import Tuple, Any, Optional
 
 # Use absolute imports from the package
 from btc_usdt_pipeline import config
-from btc_usdt_pipeline.utils.helpers import setup_logger, create_sequences
+from btc_usdt_pipeline.utils.logging_config import setup_logging
 from btc_usdt_pipeline.types import ModelInputType, ModelOutputType, MetricsDict
 
-logger = setup_logger('model_train.log')
+logger = setup_logging(log_filename='model_train.log')
 
 # Features and sequence features are now imported from config
 FEATURES = config.ALL_TREE_FEATURES

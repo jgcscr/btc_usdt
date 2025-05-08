@@ -10,13 +10,13 @@ import math
 
 # Use absolute imports from the package
 from btc_usdt_pipeline.utils.config_manager import config_manager
-from btc_usdt_pipeline.utils.helpers import setup_logger
+from btc_usdt_pipeline.utils.logging_config import setup_logging
 from btc_usdt_pipeline.exceptions import ParameterValidationError, DataAlignmentError
 from btc_usdt_pipeline.types import TradeLogType, MetricsDict
 # Note: generate_signals is called *before* the backtest function usually.
 # The backtest function receives the signals as input.
 
-logger = setup_logger('backtest.log')
+logger = setup_logging(log_filename='backtest.log')
 
 def validate_inputs(df: pd.DataFrame, signals: Any, required_cols: Optional[List[str]] = None, logger: Optional[Any] = None) -> pd.DataFrame:
     """
@@ -27,7 +27,7 @@ def validate_inputs(df: pd.DataFrame, signals: Any, required_cols: Optional[List
     - Index is properly ordered
     Raises ParameterValidationError or DataAlignmentError on failure.
     """
-    logger = logger or setup_logger('backtest.log')
+    logger = logger or setup_logging('backtest.log')
     required_cols = required_cols or ['open', 'high', 'low', 'close']
     for col in required_cols:
         if col not in df.columns:

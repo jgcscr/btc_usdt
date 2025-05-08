@@ -17,10 +17,11 @@ except ImportError:
     TF_AVAILABLE = False
 
 from btc_usdt_pipeline import config
-from btc_usdt_pipeline.utils.helpers import setup_logger, create_sequences
+from btc_usdt_pipeline.utils.logging_config import setup_logging
+from btc_usdt_pipeline.utils.helpers import create_sequences
 from btc_usdt_pipeline.io.serialization import save_json, load_json
 
-logger = setup_logger('model_management.log')
+logger = setup_logging(log_filename='model_management.log')
 
 class ModelManager:
     """Loads trained models and generates predictions."""
