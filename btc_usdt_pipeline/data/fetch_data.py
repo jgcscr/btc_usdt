@@ -168,6 +168,13 @@ def main(years=None):
         df = fetch_historical_data(symbol, interval, start_date, end_date)
 
     if df is not None and not df.empty:
+        # Ensure numeric columns are float before saving
+        numeric_columns = ['open', 'high', 'low', 'close', 'volume']
+        for col in numeric_columns:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+                if df[col].isna().any():
+                    logger.warning(f"Column '{col}' has {df[col].isna().sum()} NaN values after type conversion.")
         try:
             df.to_parquet(raw_data_path, index=False)
             logger.info(f"Successfully saved/updated data to {raw_data_path}")
