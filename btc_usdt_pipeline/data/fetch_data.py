@@ -175,6 +175,7 @@ def main(years=None):
                 df[col] = pd.to_numeric(df[col], errors='coerce')
                 if df[col].isna().any():
                     logger.warning(f"Column '{col}' has {df[col].isna().sum()} NaN values after type conversion.")
+        logger.info(f"Dtypes before saving: {df.dtypes}")
         try:
             df.to_parquet(raw_data_path, index=False)
             logger.info(f"Successfully saved/updated data to {raw_data_path}")
