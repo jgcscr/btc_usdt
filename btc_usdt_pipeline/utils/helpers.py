@@ -11,7 +11,6 @@ import pandas as pd
 from typing import Tuple, List, Dict, Any, Optional, Union
 from pathlib import Path
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.preprocessing.sequence import TimeseriesGenerator
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
@@ -142,6 +141,7 @@ def create_sequences(data: np.ndarray,
                      timesteps: Optional[int] = None) -> Tuple[np.ndarray, np.ndarray]:
     """
     Creates sequences for LSTM/GRU models using TimeseriesGenerator.
+    Uses lazy loading for TensorFlow to avoid compatibility issues.
 
     Args:
         data (np.ndarray): Feature data (rows=samples, cols=features).
@@ -157,11 +157,26 @@ def create_sequences(data: np.ndarray,
     if len(data) <= timesteps:
         # Not enough data to create sequences
         return np.empty((0, timesteps, data.shape[1])), np.empty((0,))
-
-    generator = TimeseriesGenerator(data, targets, length=timesteps, batch_size=len(data))
-    # The generator yields batches, here we take the only batch
-    X_seq, y_seq = generator[0]
-    return X_seq, y_seq
+    
+    # Lazy loading for TensorFlow
+    try:
+        from tensorflow.keras.preprocessing.sequence import TimeseriesGenerator
+        generator = TimeseriesGenerator(data, targets, length=timesteps, batch_size=len(data))
+        # The generator yields batches, here we take the only batch
+        X_seq, y_seq = generator[0]
+        return X_seq, y_seq
+    except ImportError as e:
+        utils_logger.warning(f"Failed to import TensorFlow: {e}. Using manual sequence creation.")
+        # Fallback implementation without TensorFlow
+        samples = len(data) - timesteps + 1
+        X_seq = np.zeros((samples, timesteps, data.shape[1]))
+        y_seq = np.zeros(samples)
+        
+        for i in range(samples):
+            X_seq[i] = data[i:i+timesteps]
+            y_seq[i] = targets[i+timesteps-1]
+            
+        return X_seq, y_seq
 
 # --- Plot Equity Curve ---
 def plot_equity_curve(equity_curve: List[float],
