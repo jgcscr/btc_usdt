@@ -169,18 +169,52 @@ def main(years=None):
 
     if df is not None and not df.empty:
         # Ensure numeric columns are float before saving
-        numeric_columns = ['open', 'high', 'low', 'close', 'volume']
+        numeric_columns = ['open', 'high', 'low', 'close', 'volume', 
+                          'quote_asset_volume', 'number_of_trades',
+                          'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume']
         for col in numeric_columns:
             if col in df.columns:
+                # First attempt: standard numeric conversion
                 df[col] = pd.to_numeric(df[col], errors='coerce')
                 if df[col].isna().any():
                     logger.warning(f"Column '{col}' has {df[col].isna().sum()} NaN values after type conversion.")
+        
         logger.info(f"Dtypes before saving: {df.dtypes}")
+        
+        # Detect if we're running in Google Colab (check if path contains 'drive')
+        is_gdrive = 'drive' in str(raw_data_path).lower()
+        
         try:
+            # First try: standard Parquet save
             df.to_parquet(raw_data_path, index=False)
             logger.info(f"Successfully saved/updated data to {raw_data_path}")
         except Exception as e:
             logger.error(f"Error saving data to {raw_data_path}: {e}")
+            
+            try:
+                # Second try: For Google Drive issues, try explicit string conversion
+                if is_gdrive:
+                    logger.info("Attempting to save with explicit string conversion for Google Drive compatibility")
+                    for col in numeric_columns:
+                        if col in df.columns:
+                            # Convert to string to avoid pyarrow type issues with Google Drive
+                            df[col] = df[col].astype(str)
+                    
+                    # Try with a different engine
+                    df.to_parquet(raw_data_path, index=False, engine='pyarrow')
+                    logger.info(f"Successfully saved data with string conversion to {raw_data_path}")
+                    
+            except Exception as e2:
+                logger.error(f"Final fallback save attempt failed: {e2}")
+                
+                # Last resort: Save as CSV
+                csv_path = str(raw_data_path).replace('.parquet', '.csv')
+                try:
+                    logger.info(f"Attempting to save as CSV to {csv_path}")
+                    df.to_csv(csv_path, index=False)
+                    logger.info(f"Successfully saved data as CSV to {csv_path}")
+                except Exception as e3:
+                    logger.error(f"All save attempts failed. Last error: {e3}")
     elif df is not None and df.empty:
         logger.warning("Fetched data frame is empty, nothing to save.")
     else:
