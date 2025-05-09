@@ -2,8 +2,15 @@
 """Computes technical indicators and features."""
 
 import pandas as pd
-import pandas_ta as ta # type: ignore
 import numpy as np
+import os
+from pathlib import Path
+
+# Add compatibility for pandas-ta with NumPy 2.0+
+if not hasattr(np, 'NaN'):
+    np.NaN = np.nan
+
+import pandas_ta as ta # type: ignore
 from typing import List, Dict
 
 from btc_usdt_pipeline import config
@@ -12,6 +19,7 @@ from btc_usdt_pipeline.utils.data_processing import optimize_dataframe_dtypes, p
 from btc_usdt_pipeline.io.data_manager import DataManager
 from btc_usdt_pipeline.utils.data_quality import detect_missing_data
 from btc_usdt_pipeline.utils.config_manager import config_manager
+from btc_usdt_pipeline.utils.helpers import make_binary_target
 
 logger = setup_logging(log_filename='compute_features.log')
 
@@ -218,16 +226,22 @@ def main(input_file=None, output_file=None, sample=False):
     logger.info("Starting feature computation process...")
     raw_data_path = input_file if input_file is not None else config_manager.get('data.raw_data_path')
     enriched_data_path = output_file if output_file is not None else config_manager.get('data.enriched_data_path')
+    
+    # Convert string paths to Path objects if they're not already
+    if isinstance(raw_data_path, str):
+        raw_data_path = Path(raw_data_path)
+    if isinstance(enriched_data_path, str):
+        enriched_data_path = Path(enriched_data_path)
 
     logger.info(f"Using input data from: {raw_data_path}")
     logger.info(f"Will save output data to: {enriched_data_path}")
 
     # Ensure results directory exists
     try:
-        enriched_data_path.parent.mkdir(parents=True, exist_ok=True)
-        logger.debug(f"Ensured results directory exists: {enriched_data_path.parent}")
+        os.makedirs(os.path.dirname(enriched_data_path), exist_ok=True)
+        logger.debug(f"Ensured results directory exists: {os.path.dirname(enriched_data_path)}")
     except Exception as e:
-        logger.error(f"Could not create results directory {enriched_data_path.parent}: {e}")
+        logger.error(f"Could not create results directory {os.path.dirname(enriched_data_path)}: {e}")
         return # Cannot proceed without results directory
 
     # Load raw data

@@ -4,6 +4,13 @@ Entry point script to compute features using the btc_usdt_pipeline package.
 Run as: python -m scripts.compute_features
 """
 import argparse
+import sys
+import numpy
+
+# Add compatibility for pandas-ta with NumPy 2.0+
+if not hasattr(numpy, 'NaN'):
+    numpy.NaN = numpy.nan
+
 from btc_usdt_pipeline.io.data_manager import DataManager
 from btc_usdt_pipeline.features.compute_features import main as compute_features_main
 
