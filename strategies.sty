@@ -243,3 +243,92 @@ By implementing these enhancements, a multi-strategy BTC/USDT trading framework 
 
 Dynamic Volatility-Adaptive EMA-RSI Crossover Strategy | by Sword Red | Apr, 2025 | Medium
 
+Here’s a ranked, forward-thinking roadmap of high-probability, short-term BTC/USDT strategies you could prioritize—each designed for full automation and minimal manual oversight:
+
+Momentum Scalping (EMA/MA Crosses)
+
+Logic: Capture micro-trends by entering when a fast EMA (e.g. 9-period) crosses above a slow EMA (e.g. 21-period), exiting on the reverse cross or a small profit target.
+
+Why First: Simple to implement, low latency, works especially well in trending phases.
+
+Mean-Reversion on Oscillators (RSI/Stochastics)
+
+Logic: When RSI(14) exceeds overbought (≥70), short; when it dips below oversold (≤30), long. Confirm with Stochastic(14,3,3) divergence to reduce false signals.
+
+Enhancement: Dynamically adjust overbought/oversold thresholds based on recent volatility regimes.
+
+VWAP Pullback Entries
+
+Logic: Use the intraday VWAP as “fair value.” Go long on dips to VWAP with a tight stop below the prior swing low; go short on rallies above VWAP with a stop above the prior swing high.
+
+Why: Institutional flow often anchors around VWAP—high probability edges on 1- to 4-hour timeframes.
+
+Order‐Book Imbalance (Level-2 Data)
+
+Logic: Monitor the bid/ask volume imbalance; if buy-side liquidity spikes significantly versus sell-side, take a long position anticipating a short squeeze (and vice versa).
+
+Requirements: Very low-latency access to exchange WebSocket feeds; solid slippage controls.
+
+Volatility Breakouts (Bollinger Bands/Keltner Channels)
+
+Logic: Enter on a close outside BB(20,2σ) or KC(20,1.5×ATR) and exit when price re-enters the band/channel or reaches a fixed ATR-based target.
+
+Adaptation: Use an adaptive σ or ATR multiplier based on the volatility regime from an ADX filter.
+
+Machine-Learning Signal Ensemble
+
+Logic: Combine short-term predictions from XGBoost/LSTM models trained on high-frequency features (e.g. EMAs, RSI, order-book imbalances). Generate a weighted “signal score” to filter or time entries from the strategies above.
+
+Forward-Thinking Edge: Continual online learning—retrain models every 3 hrs with the latest data to adapt to regime shifts.
+
+Reinforcement-Learning Agent (DQN/PPO)
+
+Logic: Let an RL agent learn optimal entry/exit policies by simulating trades on historical tick data with transaction costs incorporated.
+
+Caveat: Requires extensive backtesting and robust risk constraints; reserve for later once simpler strategies are live.
+
+Market-Making with Dynamic Spread
+
+Logic: Place simultaneous bid/ask limit orders around mid-price, dynamically adjusting spread and order size based on realized volatility and inventory.
+
+Goal: Capture the bid-ask spread while managing inventory risk via delta-hedging or adaptive order skew.
+
+Here’s the full list with a one-line note on each model’s particular strength for short-term BTC/USDT forecasting:
+
+ARIMA – Captures and extrapolates linear autocorrelation patterns in price series.
+
+GARCH – Models time-varying volatility clustering, improving risk-aware short-term forecasts.
+
+Temporal Convolutional Network (TCN) – Leverages dilated causal convolutions to capture long-range temporal dependencies with low training latency.
+
+WaveNet-style CNN – Uses stacked dilated convolutions and gating to hierarchically model multi-scale price patterns.
+
+N-Beats – Decomposes series into interpretable basis functions, yielding robust multi-horizon predictions.
+
+Transformer – Applies self-attention to focus on the most relevant past time steps for each forecast point.
+
+Temporal Fusion Transformer (TFT) – Combines LSTM encoding with attention and gating for interpretable, multi-horizon short-term forecasts.
+
+LSTM – Maintains a hidden memory state to learn sequential dependencies and momentum effects.
+
+GRU – A streamlined RNN variant that achieves comparable sequence modeling with fewer parameters and faster training.
+
+DeepAR / DeepState – Learns global patterns across many series and outputs probabilistic forecasts with uncertainty bounds.
+
+XGBoost – High-performance gradient-boosted trees that capture complex, non-linear relationships in engineered features.
+
+LightGBM / CatBoost – Faster gradient-boosting implementations that handle sparse and categorical features efficiently.
+
+Random Forest – Ensemble of decision trees providing robust, low-variance feature-based predictions.
+
+Support Vector Regression (SVR) – Effective for small to medium datasets; excels at capturing non-linear margins.
+
+Gaussian Process Regression – Non-parametric Bayesian method offering smooth predictions with quantified uncertainty.
+
+Facebook Prophet – Decomposes trend and seasonality components, automatically handling outliers and missing data.
+
+State-Space Models (SARIMAX, Kalman Filter, HMM) – Classical frameworks that model seasonality, regime shifts, and latent states.
+
+Bayesian Neural Network – Introduces weight uncertainty for regularization and probabilistic output distributions.
+
+Reinforcement-Learning Agents (DQN, PPO, DDPG, SAC, TD3) – Learns trade-execution policies directly by optimizing reward (profit) signals.
