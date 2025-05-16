@@ -1,0 +1,11 @@
+# Backtesting parameters and risk management
+
+initial_equity: 10000
+risk_fraction: 0.01
+commission_rate: 0.00075
+slippage_points: 2.0
+atr_stop_loss_multiplier: 1.5
+atr_take_profit_multiplier: 3.0
+backtest_atr_column: "atr_14"
+
+# Add more backtest-related settings as needed

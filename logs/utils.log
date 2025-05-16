@@ -1,0 +1,12 @@
+2025-05-01 00:14:03 INFO     [utils] [helpers.py:112] Data split: Train=70, Val=15, Test=15
+2025-05-01 00:18:07 INFO     [utils] [helpers.py:112] Data split: Train=70, Val=15, Test=15
+2025-05-01 03:16:39 INFO     [utils] [helpers.py:194] Created target 'target_move' with window=60, threshold=$500.00. Distribution:
+target_move
+0    0.956
+1    0.044
+Name: proportion, dtype: float64
+2025-05-01 17:32:10 INFO     [utils] [helpers.py:194] Created target 'target_move' with window=60, threshold=$500.00. Distribution:
+target_move
+0    0.956
+1    0.044
+Name: proportion, dtype: float64

@@ -1,0 +1,26 @@
+2025-05-01 00:14:03 INFO     [backtest] [backtest.py:56] Starting backtest with Initial Equity: $10,000.00, Risk/Trade: 1.00%, SL: 1.5*ATR, TP: 3.0*ATR, Comm: 0.0750%, Slippage: 2 pts
+2025-05-01 00:14:03 INFO     [backtest] [backtest.py:196] Long Entry at ~104.00 (Index: 2023-01-01 00:01:00). Size: 66.6667, SL: 102.50, TP: 107.00, Entry Comm: 5.20
+2025-05-01 00:14:03 INFO     [backtest] [backtest.py:104] Long SL hit at ~100.50 (Index: 2023-01-01 00:02:00). Entry: 104.00, Size: 66.6667, PnL: -233.51, Equity: 9761.29
+2025-05-01 00:14:03 INFO     [backtest] [backtest.py:196] Long Entry at ~106.00 (Index: 2023-01-01 00:04:00). Size: 65.0753, SL: 104.50, TP: 109.00, Entry Comm: 5.17
+2025-05-01 00:14:03 INFO     [backtest] [backtest.py:104] Long SL hit at ~102.50 (Index: 2023-01-01 00:05:00). Entry: 106.00, Size: 65.0753, PnL: -227.93, Equity: 9528.18
+2025-05-01 00:14:03 INFO     [backtest] [backtest.py:196] Short Entry at ~102.00 (Index: 2023-01-01 00:06:00). Size: 63.5212, SL: 103.50, TP: 99.00, Entry Comm: 4.86
+2025-05-01 00:14:03 INFO     [backtest] [backtest.py:133] Short SL hit at ~105.50 (Index: 2023-01-01 00:07:00). Entry: 102.00, Size: 63.5212, PnL: -222.49, Equity: 9300.83
+2025-05-01 00:14:03 INFO     [backtest] [backtest.py:231] Backtest finished. Final Equity: 9300.83. Total Trades Logged: 3
+2025-05-01 00:14:03 INFO     [backtest] [backtest.py:56] Starting backtest with Initial Equity: $10,000.00, Risk/Trade: 1.00%, SL: 1.0*ATR, TP: 2.0*ATR, Comm: 0.0000%, Slippage: 0 pts
+2025-05-01 00:14:03 INFO     [backtest] [backtest.py:196] Long Entry at ~102.00 (Index: 2023-01-01 00:01:00). Size: 98.0392, SL: 101.00, TP: 104.00, Entry Comm: 0.00
+2025-05-01 00:14:03 INFO     [backtest] [backtest.py:104] Long SL hit at ~101.00 (Index: 2023-01-01 00:02:00). Entry: 102.00, Size: 98.0392, PnL: -98.04, Equity: 9901.96
+2025-05-01 00:14:03 INFO     [backtest] [backtest.py:231] Backtest finished. Final Equity: 9901.96. Total Trades Logged: 1
+2025-05-01 00:14:03 ERROR    [backtest] [backtest.py:49] DataFrame length (10) and signals length (9) mismatch. Cannot run backtest.
+2025-05-01 00:18:07 INFO     [backtest] [backtest.py:56] Starting backtest with Initial Equity: $10,000.00, Risk/Trade: 1.00%, SL: 1.5*ATR, TP: 3.0*ATR, Comm: 0.0750%, Slippage: 2 pts
+2025-05-01 00:18:07 INFO     [backtest] [backtest.py:196] Long Entry at ~104.00 (Index: 2023-01-01 00:01:00). Size: 66.6667, SL: 102.50, TP: 107.00, Entry Comm: 5.20
+2025-05-01 00:18:07 INFO     [backtest] [backtest.py:104] Long SL hit at ~100.50 (Index: 2023-01-01 00:02:00). Entry: 104.00, Size: 66.6667, PnL: -233.51, Equity: 9761.29
+2025-05-01 00:18:07 INFO     [backtest] [backtest.py:196] Long Entry at ~106.00 (Index: 2023-01-01 00:04:00). Size: 65.0753, SL: 104.50, TP: 109.00, Entry Comm: 5.17
+2025-05-01 00:18:07 INFO     [backtest] [backtest.py:104] Long SL hit at ~102.50 (Index: 2023-01-01 00:05:00). Entry: 106.00, Size: 65.0753, PnL: -227.93, Equity: 9528.18
+2025-05-01 00:18:07 INFO     [backtest] [backtest.py:196] Short Entry at ~102.00 (Index: 2023-01-01 00:06:00). Size: 63.5212, SL: 103.50, TP: 99.00, Entry Comm: 4.86
+2025-05-01 00:18:07 INFO     [backtest] [backtest.py:133] Short SL hit at ~105.50 (Index: 2023-01-01 00:07:00). Entry: 102.00, Size: 63.5212, PnL: -222.49, Equity: 9300.83
+2025-05-01 00:18:07 INFO     [backtest] [backtest.py:231] Backtest finished. Final Equity: 9300.83. Total Trades Logged: 3
+2025-05-01 00:18:07 INFO     [backtest] [backtest.py:56] Starting backtest with Initial Equity: $10,000.00, Risk/Trade: 1.00%, SL: 1.0*ATR, TP: 2.0*ATR, Comm: 0.0000%, Slippage: 0 pts
+2025-05-01 00:18:07 INFO     [backtest] [backtest.py:196] Long Entry at ~102.00 (Index: 2023-01-01 00:01:00). Size: 98.0392, SL: 101.00, TP: 104.00, Entry Comm: 0.00
+2025-05-01 00:18:07 INFO     [backtest] [backtest.py:104] Long SL hit at ~101.00 (Index: 2023-01-01 00:02:00). Entry: 102.00, Size: 98.0392, PnL: -98.04, Equity: 9901.96
+2025-05-01 00:18:07 INFO     [backtest] [backtest.py:231] Backtest finished. Final Equity: 9901.96. Total Trades Logged: 1
+2025-05-01 00:18:07 ERROR    [backtest] [backtest.py:49] DataFrame length (10) and signals length (9) mismatch. Cannot run backtest.

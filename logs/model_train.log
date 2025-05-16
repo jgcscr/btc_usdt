@@ -1,0 +1,2 @@
+2025-05-01 00:14:03 INFO     [model_train] [train.py:43] Model saved to /tmp/pytest-of-codespace/pytest-0/test_save_model0/test_model.joblib
+2025-05-01 00:18:06 INFO     [model_train] [train.py:43] Model saved to /tmp/pytest-of-codespace/pytest-1/test_save_model0/test_model.joblib

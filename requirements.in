@@ -1,0 +1,17 @@
+pandas
+numpy<2.0
+requests
+pandas-ta==0.3.14b0
+joblib
+tensorflow
+scikit-learn
+xgboost
+lightgbm
+optuna
+matplotlib
+pyarrow
+ta
+# Development/Optional - uncomment if needed
+# jupyterlab
+# GitPython
+# nbdime
