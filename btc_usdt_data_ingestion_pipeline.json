@@ -1,0 +1,134 @@
+{
+  "components": {
+    "comp-fetch-binance-klines-component": {
+      "executorLabel": "exec-fetch-binance-klines-component",
+      "inputDefinitions": {
+        "parameters": {
+          "api_url": {
+            "defaultValue": "https://api.binance.com/api/v3/klines",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "end_date_str": {
+            "parameterType": "STRING"
+          },
+          "interval": {
+            "parameterType": "STRING"
+          },
+          "start_date_str": {
+            "parameterType": "STRING"
+          },
+          "symbol": {
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "artifacts": {
+          "output_data": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        }
+      }
+    }
+  },
+  "defaultPipelineRoot": "gs://jc-financial-459605-raw-data-bucket/pipeline_root/btc_usdt",
+  "deploymentSpec": {
+    "executors": {
+      "exec-fetch-binance-klines-component": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "fetch_binance_klines_component"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.13.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&  python3 -m pip install --quiet --no-warn-script-location 'pandas' 'requests' 'pyarrow' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef fetch_binance_klines_component(\n    symbol: str,\n    interval: str,\n    start_date_str: str,\n    end_date_str: str,\n    api_url: str = \"https://api.binance.com/api/v3/klines\",\n    output_data: OutputPath(\"Dataset\") = None\n):\n    \"\"\"\n    Fetch historical kline (candlestick) data from Binance API and save as Parquet.\n    \"\"\"\n    print(f\"Fetching data for {symbol} from {start_date_str} to {end_date_str} (interval: {interval})\")\n\n    # Convert date strings to datetime and then to milliseconds\n    start_dt = datetime.strptime(start_date_str, \"%Y-%m-%d\")\n    end_dt = datetime.strptime(end_date_str, \"%Y-%m-%d\")\n    start_ms = int(start_dt.timestamp() * 1000)\n    # Binance endTime is exclusive, so add 1 day to include the last day\n    end_ms = int((end_dt + timedelta(days=1)).timestamp() * 1000) - 1\n\n    all_klines = []\n    limit = 1000\n    curr_start = start_ms\n\n    while curr_start < end_ms:\n        params = {\n            \"symbol\": symbol,\n            \"interval\": interval,\n            \"startTime\": curr_start,\n            \"endTime\": end_ms,\n            \"limit\": limit\n        }\n        response = requests.get(api_url, params=params)\n        response.raise_for_status()\n        klines = response.json()\n        if not klines:\n            break\n        all_klines.extend(klines)\n        # Next start time: 1 ms after last returned kline's open time\n        last_open_time = klines[-1][0]\n        next_start = last_open_time + 1\n        if next_start <= curr_start:\n            break  # Prevent infinite loop\n        curr_start = next_start\n        if len(klines) < limit:\n            break  # No more data\n\n    if not all_klines:\n        print(\"No data fetched for the given parameters.\")\n        return\n\n    # Columns as per Binance API\n    columns = [\n        \"Open_Time\", \"Open\", \"High\", \"Low\", \"Close\", \"Volume\", \"Close_Time\",\n        \"Quote_Asset_Volume\", \"Number_of_Trades\", \"Taker_Buy_Base_Asset_Volume\",\n        \"Taker_Buy_Quote_Asset_Volume\", \"Ignore\"\n    ]\n    df = pd.DataFrame(all_klines, columns=columns)\n    # Keep only relevant columns\n    df = df[[\"Open_Time\", \"Open\", \"High\", \"Low\", \"Close\", \"Volume\"]]\n    df[\"Open_Time\"] = pd.to_datetime(df[\"Open_Time\"], unit=\"ms\")\n    for col in [\"Open\", \"High\", \"Low\", \"Close\", \"Volume\"]:\n        df[col] = df[col].astype(float)\n    # Filter strictly between start and end date\n    mask = (df[\"Open_Time\"] >= pd.to_datetime(start_date_str)) & (df[\"Open_Time\"] < pd.to_datetime(end_date_str) + pd.Timedelta(days=1))\n    df = df.loc[mask]\n    df.to_parquet(output_data, index=False, engine=\"pyarrow\")\n    print(f\"Fetched {len(df)} rows. Data saved to {output_data}\")\n\n"
+          ],
+          "image": "python:3.9-slim"
+        }
+      }
+    }
+  },
+  "pipelineInfo": {
+    "description": "A pipeline to fetch historical BTC/USDT data from Binance.",
+    "name": "btc-usdt-data-ingestion-pipeline"
+  },
+  "root": {
+    "dag": {
+      "tasks": {
+        "fetch-binance-klines-component": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-fetch-binance-klines-component"
+          },
+          "inputs": {
+            "parameters": {
+              "api_url": {
+                "componentInputParameter": "api_url"
+              },
+              "end_date_str": {
+                "componentInputParameter": "end_date"
+              },
+              "interval": {
+                "componentInputParameter": "interval"
+              },
+              "start_date_str": {
+                "componentInputParameter": "start_date"
+              },
+              "symbol": {
+                "componentInputParameter": "symbol"
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "fetch-binance-klines-component"
+          }
+        }
+      }
+    },
+    "inputDefinitions": {
+      "parameters": {
+        "api_url": {
+          "defaultValue": "https://api.binance.com/api/v3/klines",
+          "isOptional": true,
+          "parameterType": "STRING"
+        },
+        "end_date": {
+          "defaultValue": "2023-01-02",
+          "isOptional": true,
+          "parameterType": "STRING"
+        },
+        "interval": {
+          "defaultValue": "1m",
+          "isOptional": true,
+          "parameterType": "STRING"
+        },
+        "start_date": {
+          "defaultValue": "2023-01-01",
+          "isOptional": true,
+          "parameterType": "STRING"
+        },
+        "symbol": {
+          "defaultValue": "BTCUSDT",
+          "isOptional": true,
+          "parameterType": "STRING"
+        }
+      }
+    }
+  },
+  "schemaVersion": "2.1.0",
+  "sdkVersion": "kfp-2.13.0"
+}

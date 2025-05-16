@@ -1,0 +1,85 @@
+{
+  "components": {
+    "comp-hello-world-component": {
+      "executorLabel": "exec-hello-world-component",
+      "inputDefinitions": {
+        "parameters": {
+          "text": {
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "parameters": {
+          "Output": {
+            "parameterType": "STRING"
+          }
+        }
+      }
+    }
+  },
+  "defaultPipelineRoot": "gs://jc-financial-459605-raw-data-bucket/pipeline_root/btc_usdt",
+  "deploymentSpec": {
+    "executors": {
+      "exec-hello-world-component": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "hello_world_component"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.13.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef hello_world_component(text: str) -> str:\n    print(text)\n    return text\n\n"
+          ],
+          "image": "python:3.9-slim"
+        }
+      }
+    }
+  },
+  "pipelineInfo": {
+    "description": "A very simple pipeline to test basic functionality.",
+    "name": "minimal-hello-world-pipeline"
+  },
+  "root": {
+    "dag": {
+      "tasks": {
+        "hello-world-component": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-hello-world-component"
+          },
+          "inputs": {
+            "parameters": {
+              "text": {
+                "componentInputParameter": "greeting"
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "hello-world-component"
+          }
+        }
+      }
+    },
+    "inputDefinitions": {
+      "parameters": {
+        "greeting": {
+          "defaultValue": "Hello, Vertex AI Pipelines!",
+          "isOptional": true,
+          "parameterType": "STRING"
+        }
+      }
+    }
+  },
+  "schemaVersion": "2.1.0",
+  "sdkVersion": "kfp-2.13.0"
+}
