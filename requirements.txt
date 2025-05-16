@@ -31,6 +31,8 @@ gast==0.6.0
     # via tensorflow
 google-pasta==0.2.0
     # via tensorflow
+google-cloud-aiplatform
+google-cloud-storage
 greenlet==3.2.1
     # via sqlalchemy
 grpcio==1.71.0
