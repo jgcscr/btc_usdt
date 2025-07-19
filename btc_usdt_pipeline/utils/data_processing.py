@@ -60,23 +60,29 @@ def optimize_memory_usage(df: pd.DataFrame, logger=None) -> pd.DataFrame:
             except Exception:
                 pass
 
-    # Convert columns that look like datetimes
+    # Convert columns that look like datetimes (use errors='coerce' for safety)
     for col in df.columns:
         if df[col].dtype == "object":
             try:
-                parsed = pd.to_datetime(df[col], errors="raise")
+                parsed = pd.to_datetime(df[col], errors="coerce")
+                # Only convert if at least one non-null value
                 if not parsed.isnull().all():
                     df[col] = parsed
             except Exception:
                 pass
 
-    gc.collect()
+    # Run garbage collection only if DataFrame is large (>10MB)
+    if df.memory_usage(deep=True).sum() > 10 * 1024 ** 2:
+        gc.collect()
+
     end_mem = df.memory_usage(deep=True).sum() / 1024 ** 2
     reduction_pct = 100 * (start_mem - end_mem) / start_mem if start_mem > 0 else 0
     if logger:
         logger.info(f"Memory usage after optimization: {end_mem:.2f} MB (reduced by {start_mem - end_mem:.2f} MB, {reduction_pct:.1f}% reduction)")
     else:
         print(f"Memory usage after optimization: {end_mem:.2f} MB (reduced by {start_mem - end_mem:.2f} MB, {reduction_pct:.1f}% reduction)")
+
+    # TODO: For very large DataFrames, consider parallelization with Dask or modin.pandas
     return df
 
 def preprocess_data(df: pd.DataFrame, sort_by: Optional[str] = None) -> pd.DataFrame:
