@@ -24,12 +24,9 @@ Example usage:
 import os
 import pickle
 import time
-import psutil
-import logging
-from functools import wraps
 from pathlib import Path
 from btc_usdt_pipeline.utils.logging_config import setup_logging
-from btc_usdt_pipeline.monitoring.memory import monitor_memory, check_memory_usage, memory_safe
+from btc_usdt_pipeline.monitoring.memory import monitor_memory
 
 logger = setup_logging(log_filename='colab_utils.log')
 
@@ -47,7 +44,7 @@ def mount_gdrive():
     """Mount Google Drive in Colab if not already mounted."""
     if is_colab():
         from google.colab import drive
-        if not os.path.exists('/content/drive'):
+        if not Path('/content/drive').exists():
             drive.mount('/content/drive')
 
 
