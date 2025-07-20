@@ -42,3 +42,5 @@ logs/*.log
 
 # Local development settings
 .env
+backtest.log
+google-cloud-sdk-460.0.0-linux-x86_64.tar.gz
