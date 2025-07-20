@@ -11,18 +11,23 @@ def test_load_data_for_indicator_opt(mocker):
         'open_time': pd.to_datetime(['2023-01-01 00:00:00', '2023-01-01 00:01:00']),
         'open': [100, 101], 'high': [102, 102], 'low': [99, 100], 'close': [101, 101.5], 'volume': [10, 12],
         config.BACKTEST_ATR_COLUMN: [1.5, 1.6] # Include ATR column
-    }).set_index('open_time')
-    # Dummy data for predictions json
+    })
+    # Dummy data for predictions json (as DataFrame expects columns)
     dummy_preds_dict = {
         'index': ['2023-01-01 00:00:00', '2023-01-01 00:01:00'],
         'ensemble_prob': [0.6, 0.7]
     }
     mocker.patch('pandas.read_parquet', return_value=dummy_enriched_df)
     mocker.patch('btc_usdt_pipeline.utils.helpers.load_json', return_value=dummy_preds_dict)
+    # Patch os.path.exists to return True only for the predictions file path
+    predictions_path = '/workspaces/btc_usdt/results/model_predictions.json'
+    mocker.patch('os.path.exists', side_effect=lambda path: path == predictions_path or True)
 
     df_opt, preds_opt = load_data_for_indicator_opt()
 
+    # Should not be None if mocks are correct
     assert df_opt is not None
+    assert preds_opt is not None
     assert preds_opt is not None
     assert isinstance(df_opt, pd.DataFrame)
     assert isinstance(preds_opt, np.ndarray)

@@ -43,7 +43,7 @@ def validate_inputs(df: pd.DataFrame, signals: Any, required_cols: Optional[List
     if len(df) != len(signals):
         logger.error(f"DataFrame length ({len(df)}) and signals length ({len(signals)}) mismatch.")
         raise DataAlignmentError(f"DataFrame length ({len(df)}) and signals length ({len(signals)}) mismatch.")
-    if isinstance(df.index, (pd.DatetimeIndex, pd.Int64Index, pd.RangeIndex)):
+    if isinstance(df.index, (pd.DatetimeIndex, pd.RangeIndex, pd.Index)):
         if not df.index.is_monotonic_increasing:
             logger.warning("DataFrame index is not monotonic increasing. Sorting.")
             df = df.sort_index()
@@ -81,7 +81,10 @@ def run_backtest(
     """
     # --- Input validation and alignment ---
     from btc_usdt_pipeline.utils.data_processing import align_and_validate_data
-    df = validate_inputs(df, signals, required_cols=['open', 'high', 'low', 'close', atr_col], logger=logger)
+    required_cols = ['open', 'high', 'low', 'close']
+    if atr_col is not None:
+        required_cols.append(atr_col)
+    df = validate_inputs(df, signals, required_cols=required_cols, logger=logger)
     df, signals = align_and_validate_data(df, signals, arr_name="signals", logger=logger)
 
     # --- Parameter validation ---
@@ -155,17 +158,18 @@ def run_backtest(
         #   ENTRY: Subtract slippage from entry price (receive less when selling)
         #   EXIT (TP/SL): Add slippage to exit price (pay more when buying back)
 
+
         if position == 1: # Currently Long
-            # Check Stop Loss first (most conservative)
-            if stop_loss is not None and low is not None and low <= stop_loss:
-                exit_price = stop_loss - slippage_points if stop_loss is not None and slippage_points is not None else None # LONG exit: receive less
-                trade_closed = True
-                log_reason = "SL"
-            # Check Take Profit
-            elif take_profit is not None and high is not None and high >= take_profit:
+            # Check Take Profit first
+            if take_profit is not None and high is not None and high >= take_profit:
                 exit_price = take_profit - slippage_points if take_profit is not None and slippage_points is not None else None # LONG exit: receive less
                 trade_closed = True
                 log_reason = "TP"
+            # Check Stop Loss
+            elif stop_loss is not None and low is not None and low <= stop_loss:
+                exit_price = stop_loss - slippage_points if stop_loss is not None and slippage_points is not None else None # LONG exit: receive less
+                trade_closed = True
+                log_reason = "SL"
 
             if trade_closed:
                 pnl = (exit_price - entry_price) * position_size
@@ -185,16 +189,16 @@ def run_backtest(
                 stop_loss, take_profit = None, None
 
         elif position == -1: # Currently Short
-            # Check Stop Loss first
-            if stop_loss is not None and high is not None and high >= stop_loss:
-                exit_price = stop_loss + slippage_points if stop_loss is not None and slippage_points is not None else None # SHORT exit: pay more
-                trade_closed = True
-                log_reason = "SL"
-            # Check Take Profit
-            elif take_profit is not None and low is not None and low <= take_profit:
+            # Check Take Profit first
+            if take_profit is not None and low is not None and low <= take_profit:
                 exit_price = take_profit + slippage_points if take_profit is not None and slippage_points is not None else None # SHORT exit: pay more
                 trade_closed = True
                 log_reason = "TP"
+            # Check Stop Loss
+            elif stop_loss is not None and high is not None and high >= stop_loss:
+                exit_price = stop_loss + slippage_points if stop_loss is not None and slippage_points is not None else None # SHORT exit: pay more
+                trade_closed = True
+                log_reason = "SL"
 
             if trade_closed:
                 pnl = (entry_price - exit_price) * position_size # PnL for short

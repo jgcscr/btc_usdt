@@ -26,9 +26,10 @@ def test_calculate_indicators(sample_ohlcv_df):
     df_with_indicators = calculate_indicators(sample_ohlcv_df.copy())
     assert isinstance(df_with_indicators, pd.DataFrame)
     # Check if some common indicators are added (names might vary slightly based on pandas_ta version)
-    assert any(col.startswith('EMA_') for col in df_with_indicators.columns)
-    assert any(col.startswith('RSI_') for col in df_with_indicators.columns)
-    assert any(col.startswith('MACD_') for col in df_with_indicators.columns)
+    # Accept both 'EMA_' and 'ema_' formats for compatibility
+    assert any(col.lower().startswith('ema_') for col in df_with_indicators.columns)
+    assert any(col.lower().startswith('rsi_') for col in df_with_indicators.columns)
+    assert any(col.lower().startswith('macd') for col in df_with_indicators.columns)
     assert 'fractal_high' in df_with_indicators.columns
     assert 'fractal_low' in df_with_indicators.columns
 

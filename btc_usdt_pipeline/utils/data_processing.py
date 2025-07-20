@@ -155,13 +155,14 @@ def align_and_validate_data(df: pd.DataFrame, arr, arr_name="signals", index_col
         df = df.set_index(index_col)
     # If lengths match and index is monotonic, return as is
     if orig_len == arr_len:
-        if isinstance(df.index, (pd.DatetimeIndex, pd.Int64Index, pd.RangeIndex)):
+        # Remove Int64Index for compatibility with pandas >= 2.0
+        if isinstance(df.index, (pd.DatetimeIndex, pd.RangeIndex, pd.Index)):
             if not df.index.is_monotonic_increasing:
                 logger.warning("DataFrame index is not monotonic increasing. Sorting.")
                 df = df.sort_index()
         return df, arr
     # If lengths mismatch, try to align by index if arr is a pandas Series with index
-    if hasattr(arr, 'index') and isinstance(arr.index, (pd.DatetimeIndex, pd.Int64Index, pd.RangeIndex)):
+    if hasattr(arr, 'index') and isinstance(arr.index, (pd.DatetimeIndex, pd.RangeIndex)):
         common_idx = df.index.intersection(arr.index)
         if len(common_idx) == 0:
             logger.error(f"No overlapping indices between DataFrame and {arr_name}.")

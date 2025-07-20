@@ -108,16 +108,38 @@ def calculate_indicators(df: pd.DataFrame, prefix: str = "") -> pd.DataFrame:
             {"kind": "psar"}, # Parabolic SAR
         ]
     )
+
     try:
         df.ta.strategy(custom_strategy)
+        # Ensure EMA columns are present
+        for ema_len in [9, 20, 50, 100, 200]:
+            col = f"EMA_{ema_len}"
+            if col not in df.columns:
+                df[col] = df['close'].ewm(span=ema_len, adjust=False).mean()
         # Volume Oscillator: difference between SMA(volume, 14) and SMA(volume, 28)
         df['vol_sma_14'] = df['volume'].rolling(14).mean()
         df['vol_sma_28'] = df['volume'].rolling(28).mean()
         df['volume_osc'] = df['vol_sma_14'] - df['vol_sma_28']
+        # Log which indicator columns are present for debugging
+        present_ema_cols = [col for col in df.columns if col.startswith('EMA_')]
+        logger.debug(f"Present EMA columns after calculation: {present_ema_cols}")
     except Exception as e:
         logger.error(f"Error applying pandas_ta strategy: {e}")
         # Depending on the error, might return df or raise
         raise
+
+    # Fill NaNs after warmup period for all indicator columns except required_cols
+    warmup_bars = 50
+    indicator_cols = [col for col in df.columns if col not in required_cols]
+    df[indicator_cols] = df[indicator_cols].fillna(method='bfill').fillna(method='ffill')
+    # After filling, drop any remaining rows with NaNs in indicator columns after warmup
+    df = df.reset_index(drop=False)
+    if len(df) > warmup_bars:
+        df = pd.concat([
+            df.iloc[:warmup_bars],
+            df.iloc[warmup_bars:].dropna(subset=indicator_cols)
+        ], ignore_index=True)
+    df = df.set_index('index') if 'index' in df.columns else df
 
     # Add Fractals (simple high/low over 5 periods)
     # Ensure index is sorted if not already
@@ -211,7 +233,15 @@ def compute_htf_features(df: pd.DataFrame, rules: Dict[str, str] = config.HTF_RU
     merged_df = merged_df.set_index('index')
     # Forward fill any remaining NaNs in HTF columns after the first available value
     htf_added_cols = [col for col in merged_df.columns if any(col.startswith(prefix) for prefix in rules.values())]
-    merged_df[htf_added_cols] = merged_df[htf_added_cols].ffill()
+    merged_df[htf_added_cols] = merged_df[htf_added_cols].fillna(method='bfill').fillna(method='ffill')
+    # Drop any remaining rows with NaNs in HTF columns after warmup period
+    warmup_bars = 50
+    if len(merged_df) > warmup_bars:
+        merged_df = pd.concat([
+            merged_df.iloc[:warmup_bars],
+            merged_df.iloc[warmup_bars:].dropna(subset=htf_added_cols)
+        ], ignore_index=True)
+        merged_df = merged_df.set_index('index') if 'index' in merged_df.columns else merged_df
     logger.info(f"Added {len(htf_added_cols)} HTF feature columns.")
     return merged_df
 

@@ -1,3 +1,58 @@
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+
+def objective(trial):
+    """
+    Standalone objective function for RandomForest optimization (for testing).
+    Mimics the structure expected by the test.
+    """
+    import numpy as np
+    from btc_usdt_pipeline import config
+    df = load_data_once()
+    features = getattr(config, 'ALL_TREE_FEATURES', ['feature1'])
+    target_col = getattr(config, 'TARGET_COLUMN_NAME', 'target')
+    X = df[features].values
+    y = df[target_col].values
+    # Simple train/val split
+    n_val = int(0.3 * len(X))
+    X_train, X_val = X[:-n_val], X[-n_val:]
+    y_train, y_val = y[:-n_val], y[-n_val:]
+    # Get hyperparameters from trial
+    n_estimators = trial.suggest_int('n_estimators', 10, 100)
+    max_depth = trial.suggest_int('max_depth', 2, 10)
+    min_samples_split = trial.suggest_int('min_samples_split', 2, 10)
+    min_samples_leaf = trial.suggest_int('min_samples_leaf', 1, 5)
+    clf = RandomForestClassifier(
+        n_estimators=n_estimators,
+        max_depth=max_depth,
+        min_samples_split=min_samples_split,
+        min_samples_leaf=min_samples_leaf,
+        random_state=42
+    )
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_val)
+    acc = accuracy_score(y_val, y_pred)
+    trial.set_user_attr('accuracy', acc)
+    return acc
+from btc_usdt_pipeline.utils.data_manager import DataManager
+# Global cache for loaded data
+_loaded_df_cache = None
+
+def load_data_once():
+    """
+    Loads and caches the main data DataFrame for optimization. Only supports parquet files.
+    Returns:
+        pd.DataFrame or None
+    """
+    global _loaded_df_cache
+    if _loaded_df_cache is not None:
+        return _loaded_df_cache
+    dm = DataManager()
+    # You may want to adjust the path and config as needed
+    from btc_usdt_pipeline import config
+    df = dm.load_data(getattr(config, 'ENRICHED_DATA_PATH', 'data/1m_btcusdt_enriched.parquet'), file_type='parquet')
+    _loaded_df_cache = df
+    return df
 """
 Auto-optimization module for ML models and trading strategies.
 Provides automated hyperparameter tuning and strategy selection.

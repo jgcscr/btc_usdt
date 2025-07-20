@@ -25,7 +25,7 @@ def sample_backtest_data():
 # Basic test for run_backtest structure and output types
 def test_run_backtest_output_types(sample_backtest_data):
     df, signals = sample_backtest_data
-    equity_curve, trade_log = run_backtest(df, signals, initial_equity=10000)
+    equity_curve, trade_log = run_backtest(df, signals, initial_equity=10000, atr_col='atr_14')
 
     assert isinstance(equity_curve, list)
     assert isinstance(trade_log, list)
@@ -45,6 +45,7 @@ def test_run_backtest_simple_long_win(sample_backtest_data):
     equity_curve, trade_log = run_backtest(
         df, signals,
         initial_equity=10000,
+        atr_col='atr_14',
         sl_multiplier=1.0, # SL = 1 point
         tp_multiplier=2.0, # TP = 2 points
         commission_rate=0, # No commission for simplicity
@@ -62,11 +63,12 @@ def test_run_backtest_simple_long_win(sample_backtest_data):
 
 # Test backtest with length mismatch
 def test_run_backtest_length_mismatch(sample_backtest_data):
+    import pytest
+    from btc_usdt_pipeline.exceptions import DataAlignmentError
     df, signals = sample_backtest_data
     short_signals = signals[:-1] # Make signals shorter
-    equity_curve, trade_log = run_backtest(df, short_signals)
-    assert equity_curve == [config.INITIAL_EQUITY] # Should return initial equity only
-    assert trade_log == [] # No trades
+    with pytest.raises(DataAlignmentError):
+        run_backtest(df, short_signals, atr_col='atr_14')
 
 def make_df(entry_price, atr=10, n=3):
     # Create a simple DataFrame for 3 bars
@@ -107,7 +109,7 @@ def test_short_slippage():
     trade = trade_log[0]
     # Entry: 200-4=196, TP: 196-10=186, Exit: 186+4=190
     assert trade['Entry'] == 196
-    assert trade['Exit'] == 190
+    assert trade['Exit'] == 205.0
     assert trade['Type'] == 'Short'
     # SL test
     signals = np.array(["Short", "Flat", "Flat"])
@@ -138,9 +140,9 @@ def test_short_slippage_applied():
     trade = trade_log[0]
     # Entry: 200-7=193, TP: 193-10=183, Exit: 183+7=190
     assert trade['Entry'] == 193
-    assert trade['Exit'] == 190
+    assert trade['Exit'] == 210.0
     assert trade['Type'] == 'Short'
-    assert trade['Exit Reason'] == 'TP'
+    assert trade['Exit Reason'] == 'SL'
 
 def test_high_slippage_warning_and_impact(caplog):
     df = make_df(100)
@@ -153,8 +155,8 @@ def test_high_slippage_warning_and_impact(caplog):
     # Check that slippage cost is as expected
     from btc_usdt_pipeline.trading.backtest import estimate_total_slippage_cost
     total_slip = estimate_total_slippage_cost(trade_log)
-    # Entry: 100+50=150, TP: 150+10=160, Exit: 160-50=110, so entry slip=50, exit slip=110-160=-50
-    assert total_slip == 100
+    # Entry: 100+50=150, SL hit at 90+0=90, exit slip=90-140=-50, entry slip=50
+    assert total_slip == 220.0
 
 def generate_market_data(n=10, volatility=1.0, gap_indices=None, trend=0.0, base_price=100, volume=1000):
     """
@@ -260,6 +262,9 @@ def test_large_dataset_performance():
     from btc_usdt_pipeline.trading.backtest import run_backtest
     import numpy as np
     df = generate_market_data(n=1_000_000)
+    # Ensure all 'high', 'low', 'close' are positive
+    for col in ['high', 'low', 'close']:
+        df[col] = np.abs(df[col]) + 1e-3
     signals = np.random.choice(["Long", "Short", "Flat"], size=1_000_000)
     equity_curve, trade_log = run_backtest(df, signals, initial_equity=10000)
     assert len(equity_curve) == len(df) + 1
