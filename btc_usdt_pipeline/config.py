@@ -1,16 +1,14 @@
-# config.py
-"""Central configuration file for the BTC/USDT trading pipeline."""
 
+"""Central configuration file for the BTC/USDT trading pipeline."""
 import os
-import logging
+from pathlib import Path
 from typing import List
-from pathlib import Path # Import Path
-from btc_usdt_pipeline.utils.config_manager import ConfigManager
 from btc_usdt_pipeline.utils.colab_utils import is_colab
 
 # --- Paths ---
 if is_colab():
-    DRIVE_BASE_PATH_STR = os.getenv('DRIVE_BASE_PATH', '/content/drive/My Drive/btc_usdt_trading_pipeline')
+    DRIVE_BASE_PATH_STR = os.getenv(
+        'DRIVE_BASE_PATH', '/content/drive/My Drive/btc_usdt_trading_pipeline')
 else:
     DRIVE_BASE_PATH_STR = os.getenv('DRIVE_BASE_PATH', '/workspaces/btc_usdt')
 BASE_DIR = Path(DRIVE_BASE_PATH_STR)
@@ -53,7 +51,10 @@ UTILS_LOG_NAME = 'utils.log' # Keep base names if needed by setup_logger
 # --- Data Fetching ---
 SYMBOL = os.getenv('SYMBOL', 'BTCUSDT')
 INTERVAL = os.getenv('INTERVAL', '1m')
-BINANCE_API_URL = os.getenv('API_URL', 'https://api.binance.us/api/v3/klines') # Use .com or appropriate endpoint
+BINANCE_API_URL = os.getenv(
+    'API_URL',
+    'https://api.binance.us/api/v3/klines'
+)  # Use .com or appropriate endpoint
 FETCH_LIMIT = 1000  # Binance max per request
 FETCH_DAYS = int(os.getenv('DAYS', 365)) # Days of data to fetch initially if no file exists
 FETCH_DELAY_SECONDS = 0.25 # Delay between API calls
@@ -74,7 +75,9 @@ FEATURES_1M: List[str] = [
     'bb_lower', 'atr_14', 'adx_14', 'psar', 'fractal_high', 'fractal_low'
 ]
 # HTF features (dynamically generated names in compute_features)
-FEATURES_HTF_INDICATORS: List[str] = ['ema_20', 'rsi_14', 'macd', 'bb_upper', 'bb_lower', 'atr_14', 'adx_14']
+FEATURES_HTF_INDICATORS: List[str] = [
+    'ema_20', 'rsi_14', 'macd', 'bb_upper', 'bb_lower', 'atr_14', 'adx_14'
+]
 FEATURES_HTF: List[str] = [
     f'{prefix}_{ind}'
     for prefix in HTF_RULES.values()
@@ -111,8 +114,8 @@ RANDOM_STATE = 42 # Added for reproducibility if not already present
 
 # --- Backtesting & Signals ---
 INITIAL_EQUITY = 10000
-SIGNAL_THRESHOLD = 0.5 # Threshold for multi_timeframe_signal logic (Adjust based on optimization/analysis)
-PROBABILITY_THRESHOLD = 0.55 # Min prediction probability to consider a signal (Adjust based on optimization/analysis)
+SIGNAL_THRESHOLD = 0.5  # Threshold for multi_timeframe_signal logic (Adjust based on optimization/analysis)
+PROBABILITY_THRESHOLD = 0.55  # Min prediction probability to consider a signal (Adjust based on optimization/analysis)
 ATR_STOP_LOSS_MULTIPLIER = 1.5 # Example: Tighter SL
 ATR_TAKE_PROFIT_MULTIPLIER = 3.0 # Example: Wider TP
 BACKTEST_ATR_COLUMN = 'atr_14' # Which ATR to use for SL/TP (Ensure this is calculated in features)
@@ -123,7 +126,8 @@ RISK_FRACTION = 0.01 # Example: Risk 1% of equity per trade
 # --- Optimization ---
 OPTUNA_N_TRIALS_AUTO = 50 # Trials for auto_optimize
 OPTUNA_N_TRIALS_INDICATORS = 30 # Trials for optimize_indicators
-# Adjust based on Colab/environment resources. -1 uses all cores, but can cause issues on resource-constrained environments.
+# Adjust based on Colab/environment resources. -1 uses all cores, but can cause issues on
+# resource-constrained environments.
 OPTUNA_N_JOBS = 1 # Defaulting to 1 for broader compatibility, adjust as needed.
 
 # --- Execution ---
@@ -131,5 +135,7 @@ LIVE_TRADING = False # Set to True to enable actual execution calls (requires br
 
 # --- Logging ---
 LOG_LEVEL = "INFO" # e.g., "DEBUG", "INFO", "WARNING", "ERROR"
-LOG_FORMAT = '%(asctime)s %(levelname)-8s [%(name)s] [%(filename)s:%(lineno)d] %(message)s' # Added logger name
+LOG_FORMAT = (
+    '%(asctime)s %(levelname)-8s [%(name)s] [%(filename)s:%(lineno)d] %(message)s'
+)  # Added logger name
 LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
