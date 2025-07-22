@@ -18,14 +18,23 @@ from btc_usdt_pipeline.types import TradeLogType, MetricsDict
 
 logger = setup_logging(log_filename='backtest.log')
 
-def validate_inputs(df: pd.DataFrame, signals: Any, required_cols: Optional[List[str]] = None, logger: Optional[Any] = None) -> pd.DataFrame:
+def validate_inputs(
+    df: pd.DataFrame,
+    signals: Any,
+    required_cols: Optional[List[str]] = None,
+    logger: Optional[Any] = None
+) -> pd.DataFrame:
     """
-    Validates DataFrame and signals for backtesting:
-    - Checks required columns
-    - No NaNs in critical columns
-    - Signal array and DataFrame match in length
-    - Index is properly ordered
-    Raises ParameterValidationError or DataAlignmentError on failure.
+    Validates DataFrame and signals for backtesting.
+    Args:
+        df (pd.DataFrame): DataFrame with OHLC data.
+        signals (Any): Array of trading signals.
+        required_cols (Optional[List[str]]): Required columns for validation.
+        logger (Optional[Any]): Logger instance.
+    Returns:
+        pd.DataFrame: Validated DataFrame.
+    Raises:
+        ParameterValidationError, DataAlignmentError
     """
     logger = logger or setup_logging('backtest.log')
     required_cols = required_cols or ['open', 'high', 'low', 'close']
@@ -62,22 +71,18 @@ def run_backtest(
 ) -> Tuple[List[float], TradeLogType]:
     """
     Runs an event-driven backtest with position sizing, commissions, and slippage.
-
     Args:
-        df (pd.DataFrame): DataFrame with OHLC data and the ATR column, indexed by time.
-        signals (np.ndarray): Array of trading signals ("Long", "Short", "Flat") corresponding to df rows.
-        initial_equity (float): Starting capital for the backtest.
-        atr_col (str): Name of the column containing ATR values for SL/TP calculation.
-        sl_multiplier (float): Multiplier for ATR to set stop loss distance.
-        tp_multiplier (float): Multiplier for ATR to set take profit distance.
-        commission_rate (float): Commission fee per trade (e.g., 0.001 for 0.1%).
-        slippage_points (float): Price difference due to slippage on entry/exit.
+        df (pd.DataFrame): DataFrame with OHLC data and ATR column.
+        signals (np.ndarray): Array of trading signals.
+        initial_equity (float): Starting capital.
+        atr_col (str): ATR column name.
+        sl_multiplier (float): ATR multiplier for stop loss.
+        tp_multiplier (float): ATR multiplier for take profit.
+        commission_rate (float): Commission rate per trade.
+        slippage_points (float): Slippage points per trade.
         risk_fraction (float): Fraction of equity to risk per trade.
-
     Returns:
-        Tuple[List[float], TradeLogType]:
-            - equity_curve: List of equity values over time.
-            - trade_log: List of dictionaries detailing each executed trade.
+        Tuple[List[float], TradeLogType]: Equity curve and trade log.
     """
     # --- Input validation and alignment ---
     from btc_usdt_pipeline.utils.data_processing import align_and_validate_data

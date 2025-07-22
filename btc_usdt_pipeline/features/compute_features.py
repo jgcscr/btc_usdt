@@ -23,8 +23,14 @@ from btc_usdt_pipeline.utils.helpers import make_binary_target
 
 logger = setup_logging(log_filename='compute_features.log')
 
-def standardize_column_names(df):
-    """Standardize indicator column names to match config.FEATURES_1M format"""
+def standardize_column_names(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Standardize indicator column names to match config.FEATURES_1M format.
+    Args:
+        df (pd.DataFrame): DataFrame with indicator columns.
+    Returns:
+        pd.DataFrame: DataFrame with standardized column names.
+    """
     rename_map = {
         # Moving Averages
         'EMA_9': 'ema_9',
@@ -71,7 +77,14 @@ def standardize_column_names(df):
 
 # Helper function to calculate features for a given timeframe df
 def calculate_indicators(df: pd.DataFrame, prefix: str = "") -> pd.DataFrame:
-    """Calculates a standard set of indicators using pandas_ta."""
+    """
+    Calculates a standard set of indicators using pandas_ta.
+    Args:
+        df (pd.DataFrame): DataFrame with OHLCV columns.
+        prefix (str): Optional prefix for indicator columns.
+    Returns:
+        pd.DataFrame: DataFrame with calculated indicators.
+    """
     logger.debug(f"Calculating indicators with prefix: '{prefix}'")
     # Ensure columns exist
     required_cols = ['open', 'high', 'low', 'close', 'volume']
@@ -169,7 +182,14 @@ def calculate_indicators(df: pd.DataFrame, prefix: str = "") -> pd.DataFrame:
     return df
 
 def compute_htf_features(df: pd.DataFrame, rules: Dict[str, str] = config.HTF_RULES) -> pd.DataFrame:
-    """Computes features on higher timeframes and merges them back."""
+    """
+    Computes features on higher timeframes and merges them back.
+    Args:
+        df (pd.DataFrame): DataFrame with 1m data.
+        rules (Dict[str, str]): Resampling rules and prefixes.
+    Returns:
+        pd.DataFrame: DataFrame with merged HTF features.
+    """
     logger.info("Computing Higher Timeframe (HTF) features...")
     # Ensure index is datetime
     if not isinstance(df.index, pd.DatetimeIndex):
@@ -245,13 +265,15 @@ def compute_htf_features(df: pd.DataFrame, rules: Dict[str, str] = config.HTF_RU
     logger.info(f"Added {len(htf_added_cols)} HTF feature columns.")
     return merged_df
 
-def main(input_file=None, output_file=None, sample=False):
-    """Main function to load data, compute features, and save.
-    
+def main(input_file: str = None, output_file: str = None, sample: bool = False) -> None:
+    """
+    Main function to load data, compute features, and save.
     Args:
         input_file (str, optional): Path to input data file. Defaults to None (uses config).
         output_file (str, optional): Path to output features file. Defaults to None (uses config).
         sample (bool, optional): Whether to use a sample of data. Defaults to False.
+    Returns:
+        None
     """
     logger.info("Starting feature computation process...")
     raw_data_path = input_file if input_file is not None else config_manager.get('data.raw_data_path')

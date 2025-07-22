@@ -58,3 +58,8 @@
 2025-07-20 01:23:54 [INFO] fetch_data.log: Memory usage before optimization: 0.00 MB
 2025-07-20 01:23:54 [INFO] fetch_data.log: Memory usage after optimization: 0.00 MB (reduced by 0.00 MB, 24.1% reduction)
 2025-07-20 01:23:54 [INFO] fetch_data.log: Fetched 1 klines.
+2025-07-20 02:06:56 [ERROR] fetch_data.log: API request failed: API Error
+2025-07-20 02:06:56 [INFO] fetch_data.log: Fetching data for BTCUSDT (1m) from 2023-03-15 00:00:00 to 2023-03-15 00:02:00
+2025-07-20 02:06:57 [INFO] fetch_data.log: Memory usage before optimization: 0.00 MB
+2025-07-20 02:06:57 [INFO] fetch_data.log: Memory usage after optimization: 0.00 MB (reduced by 0.00 MB, 24.1% reduction)
+2025-07-20 02:06:57 [INFO] fetch_data.log: Fetched 1 klines.

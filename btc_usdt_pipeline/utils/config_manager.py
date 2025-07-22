@@ -70,10 +70,12 @@ class ConfigManager:
         if not self.gcs_bucket_name:
             return
 
-        path_keys = ['data_dir', 'models_dir', 'results_dir', 'logs_dir',
-                       'raw_data_path', 'enriched_data_path',
-                       'auto_optimize_results_path', 'indicator_optimize_results_path',
-                       'model_predictions_path']
+        path_keys = [
+            'data_dir', 'models_dir', 'results_dir', 'logs_dir',
+            'raw_data_path', 'enriched_data_path',
+            'auto_optimize_results_path', 'indicator_optimize_results_path',
+            'model_predictions_path'
+        ]
 
         for section_name, section_config in self.configs.items():
             for key, value in section_config.items():

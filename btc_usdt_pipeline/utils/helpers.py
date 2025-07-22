@@ -5,10 +5,9 @@ and target variable creation.
 """
 import logging
 import os
-import json
 import numpy as np
 import pandas as pd
-from typing import Tuple, List, Dict, Any, Optional, Union
+from typing import Tuple, List, Dict, Any, Optional
 from pathlib import Path
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt

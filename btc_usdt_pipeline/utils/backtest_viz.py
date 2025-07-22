@@ -1,3 +1,5 @@
+
+"""Backtest visualization utilities for the BTC/USDT pipeline."""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt

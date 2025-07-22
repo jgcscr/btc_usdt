@@ -1,3 +1,5 @@
+
+"""Workflow utilities for the BTC/USDT pipeline."""
 import time
 import traceback
 import logging
@@ -10,32 +12,34 @@ from btc_usdt_pipeline.utils.logging_config import setup_logging
 logger = setup_logging(log_filename='workflow.log')
 
 class TaskError(Exception):
-    pass
+    """Custom exception for workflow task errors."""
 
 class TaskRunner:
+    """Class for running workflow tasks with retry logic."""
     def __init__(self, func: Callable, name: str, max_retries: int = 3, retry_delay: int = 10, dependencies: Optional[List[str]] = None):
         self.func = func
         self.name = name
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.dependencies = dependencies or []
-        self.status: str = 'pending'  # Change from None to str type annotation
+        self.status: str = 'pending'
         self.last_error = None
         self.result = None
 
     def run(self, context: Dict[str, Any]):
+        """Run the task with retry logic."""
         retries = 0
         while retries <= self.max_retries:
             try:
-                logger.info(f"Running task: {self.name} (attempt {retries+1})")
+                logger.info("Running task: %s (attempt %d)", self.name, retries+1)
                 self.status = 'running'
                 self.result = self.func(context)
                 self.status = 'success'
-                logger.info(f"Task {self.name} completed successfully.")
+                logger.info("Task %s completed successfully.", self.name)
                 return self.result
             except Exception as e:
                 self.last_error = str(e)
-                logger.error(f"Task {self.name} failed: {e}\n{traceback.format_exc()}")
+                logger.error("Task %s failed: %s\n%s", self.name, e, traceback.format_exc())
                 self.status = 'failed'
                 retries += 1
                 if retries > self.max_retries:

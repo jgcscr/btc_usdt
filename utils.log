@@ -22,3 +22,7 @@
 2025-07-20 01:23:55 [WARNING] utils.log: Alignment dropped 1 rows from DataFrame and 0 from signals.
 2025-07-20 01:23:55 [INFO] utils.log: Alignment report: matched 4 rows.
 2025-07-20 01:23:55 [ERROR] utils.log: No overlapping indices between DataFrame and signals.
+2025-07-20 02:06:57 [INFO] utils.log: Data split: Train=70, Val=15, Test=15
+2025-07-20 02:06:57 [WARNING] utils.log: Alignment dropped 1 rows from DataFrame and 0 from signals.
+2025-07-20 02:06:57 [INFO] utils.log: Alignment report: matched 4 rows.
+2025-07-20 02:06:57 [ERROR] utils.log: No overlapping indices between DataFrame and signals.

@@ -1,7 +1,6 @@
-"""
-Custom type aliases for the BTC/USDT trading pipeline.
-"""
-from typing import Any, Dict, List, Tuple, Union, Optional, TypeVar, Callable
+
+"""Custom type aliases for the BTC/USDT trading pipeline."""
+from typing import Any, Dict, List, Tuple, Union, TypeVar, Callable
 import numpy as np
 import pandas as pd
 

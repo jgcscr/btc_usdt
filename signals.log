@@ -42,3 +42,9 @@
 2025-07-20 01:26:08 [INFO] signals.log: Signal generation complete. Counts: {np.str_('Flat'): np.int64(2), np.str_('Long'): np.int64(3)}
 2025-07-20 01:26:08 [INFO] signals.log: Generating signals with probability threshold: 0.75
 2025-07-20 01:26:08 [INFO] signals.log: Signal generation complete. Counts: {np.str_('Flat'): np.int64(4), np.str_('Long'): np.int64(1)}
+2025-07-20 02:06:57 [INFO] signals.log: Generating signals with probability threshold: 0.6
+2025-07-20 02:06:57 [INFO] signals.log: Signal generation complete. Counts: {np.str_('Flat'): np.int64(3), np.str_('Long'): np.int64(2)}
+2025-07-20 02:11:13 [INFO] signals.log: Generating signals with probability threshold: 0.55
+2025-07-20 02:11:13 [INFO] signals.log: Signal generation complete. Counts: {np.str_('Flat'): np.int64(2), np.str_('Long'): np.int64(3)}
+2025-07-20 02:11:13 [INFO] signals.log: Generating signals with probability threshold: 0.75
+2025-07-20 02:11:13 [INFO] signals.log: Signal generation complete. Counts: {np.str_('Flat'): np.int64(4), np.str_('Long'): np.int64(1)}

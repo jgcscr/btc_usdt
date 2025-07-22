@@ -4,10 +4,11 @@ parallel_processing.py
 Unified utilities for parallel processing of DataFrames and general tasks using multiprocessing.
 Safeguards are included for Colab environments.
 """
+
+import os
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
-import os
 from typing import Callable, List, Any, Optional, Tuple, Dict
 from btc_usdt_pipeline.utils.colab_utils import is_colab
 
